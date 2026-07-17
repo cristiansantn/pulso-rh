@@ -1,0 +1,270 @@
+import Link from "next/link";
+import { FirstAidKit, Plus } from "@phosphor-icons/react/dist/ssr";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { PageHeader } from "@/components/ui/page-header";
+import {
+  formatarTaxa,
+  listarDiasPerdidos,
+  taxaAbsenteismo,
+} from "@/lib/analytics/absenteismo";
+import { listarColaboradores } from "@/lib/data/colaboradores";
+import { listarAfastamentos, listarOcorrencias } from "@/lib/data/frequencia";
+import { listarSetores } from "@/lib/data/setores";
+import {
+  CATEGORIAS_AFASTAMENTO,
+  TIPOS_AFASTAMENTO,
+  TIPOS_OCORRENCIA,
+} from "@/lib/data/tipos";
+import { diasAtrasIso, formatarDataBr, hojeIso } from "@/lib/datas";
+
+const PERIODOS: Record<string, string> = {
+  "7": "Últimos 7 dias",
+  "15": "Últimos 15 dias",
+  "30": "Últimos 30 dias",
+  "60": "Últimos 60 dias",
+  "90": "Últimos 90 dias",
+};
+
+const SELECT_FILTRO =
+  "rounded-md border border-line bg-panel px-3 py-2 text-sm text-ink-soft " +
+  "focus:border-line-strong focus:outline-none focus:ring-2 focus:ring-line";
+
+function formatarPeriodo(inicio: string, fim: string | null): string {
+  if (!fim || fim === inicio) return formatarDataBr(inicio);
+  return `${formatarDataBr(inicio)} a ${formatarDataBr(fim)}`;
+}
+
+/** Painel operacional de frequencia: ocorrencias e afastamentos do periodo. */
+export default async function FrequenciaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ periodo?: string; setor?: string }>;
+}) {
+  const params = await searchParams;
+  const periodoDias = PERIODOS[params.periodo ?? ""] ? Number(params.periodo) : 30;
+  const setorId = params.setor;
+
+  const hoje = hojeIso();
+  const inicio = diasAtrasIso(periodoDias);
+  const periodo = { inicio, fim: hoje };
+
+  const [colaboradores, setores, ocorrenciasTodas, afastamentosTodos] =
+    await Promise.all([
+      listarColaboradores(),
+      listarSetores(),
+      listarOcorrencias({ desde: inicio }),
+      listarAfastamentos({ desde: inicio }),
+    ]);
+
+  const nomePorId = new Map(colaboradores.map((c) => [c.id, c.nome]));
+  const noSetor = new Set(
+    colaboradores.filter((c) => !setorId || c.setor_id === setorId).map((c) => c.id),
+  );
+
+  const ocorrencias = ocorrenciasTodas.filter((o) => noSetor.has(o.colaborador_id));
+  const afastamentos = afastamentosTodos.filter((a) => noSetor.has(a.colaborador_id));
+  const quadroAtual = colaboradores.filter(
+    (c) => c.status !== "desligado" && noSetor.has(c.id),
+  );
+
+  const faltas = ocorrencias.filter(
+    (o) => o.tipo === "falta_injustificada" || o.tipo === "falta_justificada",
+  );
+  const atrasos = ocorrencias.filter((o) => o.tipo === "atraso");
+  const minutosAtraso = atrasos.reduce((total, o) => total + (o.minutos ?? 0), 0);
+
+  const diasPerdidos = listarDiasPerdidos(ocorrencias, afastamentos, periodo);
+  const taxa = taxaAbsenteismo(diasPerdidos.length, quadroAtual.length, periodo);
+
+  const afastamentosEmCurso = afastamentos.filter(
+    (a) => a.data_inicio <= hoje && (a.data_fim === null || a.data_fim >= hoje),
+  );
+
+  const filtroAtivo = Boolean(params.periodo || params.setor);
+
+  return (
+    <>
+      <PageHeader
+        titulo="Escala & Frequência"
+        descricao="Faltas, atrasos, folgas, férias e afastamentos. Escala planejada x realizada e banco de horas entram no próximo incremento da Fase 3."
+      >
+        <Link
+          href="/frequencia/afastamento"
+          className="flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-ink-soft transition-colors hover:bg-neutral-soft/60"
+        >
+          <FirstAidKit size={15} />
+          Registrar afastamento
+        </Link>
+        <Link
+          href="/frequencia/nova"
+          className="flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-panel transition-opacity hover:opacity-90"
+        >
+          <Plus size={15} />
+          Registrar ocorrência
+        </Link>
+      </PageHeader>
+
+      <form className="mb-4 flex flex-wrap items-center gap-2">
+        <select name="periodo" defaultValue={String(periodoDias)} className={SELECT_FILTRO}>
+          {Object.entries(PERIODOS).map(([valor, rotulo]) => (
+            <option key={valor} value={valor}>
+              {rotulo}
+            </option>
+          ))}
+        </select>
+        <select name="setor" defaultValue={setorId ?? ""} className={SELECT_FILTRO}>
+          <option value="">Todos os setores</option>
+          {setores.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.nome}
+            </option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="rounded-md border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-neutral-soft/60"
+        >
+          Filtrar
+        </button>
+        {filtroAtivo && (
+          <Link
+            href="/frequencia"
+            className="px-2 py-2 text-sm text-ink-muted transition-colors hover:text-ink"
+          >
+            Limpar
+          </Link>
+        )}
+      </form>
+
+      <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <KpiCard rotulo="Faltas no período" valor={String(faltas.length)} />
+        <KpiCard
+          rotulo="Atrasos no período"
+          valor={String(atrasos.length)}
+          detalhe={`${minutosAtraso} minutos perdidos`}
+        />
+        <KpiCard
+          rotulo="Afastamentos em curso"
+          valor={String(afastamentosEmCurso.length)}
+        />
+        <KpiCard
+          rotulo="Em férias hoje"
+          valor={String(quadroAtual.filter((c) => c.status === "ferias").length)}
+        />
+        <KpiCard
+          rotulo="Absenteísmo no período"
+          valor={formatarTaxa(taxa)}
+          detalhe="Aproximação: dias corridos x quadro atual"
+        />
+      </section>
+
+      <section className="mt-6 overflow-hidden rounded-lg border border-line bg-panel">
+        <div className="border-b border-line px-6 py-4">
+          <h2 className="text-sm font-semibold">
+            Ocorrências — {PERIODOS[String(periodoDias)].toLowerCase()}
+          </h2>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            O histórico completo de cada pessoa fica na ficha individual.
+          </p>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-line text-left text-xs text-ink-muted">
+              <th className="px-6 py-2.5 font-medium">Colaborador</th>
+              <th className="px-6 py-2.5 font-medium">Tipo</th>
+              <th className="px-6 py-2.5 font-medium">Período</th>
+              <th className="px-6 py-2.5 text-right font-medium">Minutos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ocorrencias.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-6 py-10 text-center text-ink-muted">
+                  Nenhuma ocorrência registrada no período.
+                </td>
+              </tr>
+            )}
+            {ocorrencias.map((o) => (
+              <tr
+                key={o.id}
+                className="border-b border-line transition-colors last:border-0 hover:bg-surface"
+              >
+                <td className="px-6 py-3">
+                  <Link href={`/pessoas/${o.colaborador_id}`} className="font-medium">
+                    {nomePorId.get(o.colaborador_id) ?? "—"}
+                  </Link>
+                </td>
+                <td className="px-6 py-3 text-ink-soft">{TIPOS_OCORRENCIA[o.tipo]}</td>
+                <td className="px-6 py-3 text-ink-soft">
+                  {formatarPeriodo(o.data_inicio, o.data_fim)}
+                </td>
+                <td className="px-6 py-3 text-right text-ink-soft">{o.minutos ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="mt-6 overflow-hidden rounded-lg border border-line bg-panel">
+        <div className="border-b border-line px-6 py-4">
+          <h2 className="text-sm font-semibold">
+            Afastamentos e atestados — {PERIODOS[String(periodoDias)].toLowerCase()}
+          </h2>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            Categorias controladas, sem texto livre. Quando houver papéis de acesso,
+            esta seção passa a ser restrita (LGPD).
+          </p>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-line text-left text-xs text-ink-muted">
+              <th className="px-6 py-2.5 font-medium">Colaborador</th>
+              <th className="px-6 py-2.5 font-medium">Tipo</th>
+              <th className="px-6 py-2.5 font-medium">Categoria</th>
+              <th className="px-6 py-2.5 font-medium">Início</th>
+              <th className="px-6 py-2.5 font-medium">Retorno previsto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {afastamentos.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-6 py-10 text-center text-ink-muted">
+                  Nenhum afastamento registrado no período.
+                </td>
+              </tr>
+            )}
+            {afastamentos.map((a) => {
+              const emCurso =
+                a.data_inicio <= hoje && (a.data_fim === null || a.data_fim >= hoje);
+              return (
+                <tr
+                  key={a.id}
+                  className="border-b border-line transition-colors last:border-0 hover:bg-surface"
+                >
+                  <td className="px-6 py-3">
+                    <Link href={`/pessoas/${a.colaborador_id}`} className="font-medium">
+                      {nomePorId.get(a.colaborador_id) ?? "—"}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-3 text-ink-soft">{TIPOS_AFASTAMENTO[a.tipo]}</td>
+                  <td className="px-6 py-3 text-ink-soft">
+                    {CATEGORIAS_AFASTAMENTO[a.categoria]}
+                  </td>
+                  <td className="px-6 py-3 text-ink-soft">{formatarDataBr(a.data_inicio)}</td>
+                  <td className="px-6 py-3 text-ink-soft">
+                    {a.data_fim ? formatarDataBr(a.data_fim) : "Indeterminado"}
+                    {emCurso && (
+                      <span className="ml-2 inline-flex rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
+                        Em curso
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
+    </>
+  );
+}

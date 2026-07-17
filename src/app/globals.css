@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Design tokens.
+ * Paleta de neutros quentes, um unico tom de tinta para acoes primarias e
+ * cores semanticas discretas para status. Nada de gradientes ou sombras fortes.
+ */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-surface: #f7f6f3;
+  --color-panel: #ffffff;
+  --color-line: #e7e4de;
+  --color-line-strong: #d6d2c9;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: #24221e;
+  --color-ink-soft: #57534a;
+  --color-ink-muted: #8b8578;
+
+  /* Azul institucional C&A (Mariner) para acoes primarias e acentos. */
+  --color-brand: #2a73c4;
+  --color-brand-strong: #1f5da3;
+  --color-brand-soft: #e9f1fa;
+
+  --color-positive: #3d7a4f;
+  --color-positive-soft: #e9f2ec;
+  --color-warning: #96691c;
+  --color-warning-soft: #f6efdf;
+  --color-negative: #a03d33;
+  --color-negative-soft: #f7e9e7;
+  --color-neutral-soft: #edebe6;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-surface);
+  color: var(--color-ink);
 }

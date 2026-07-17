@@ -1,0 +1,7 @@
+/docs
+/supabase
+.claude
+*.tsbuildinfo
+/logo_cea.webp
+/background_login.jpg
+README.md
