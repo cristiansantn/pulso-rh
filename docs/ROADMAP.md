@@ -96,19 +96,6 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
       
 ## Questionamentos e Melhorias (Vale uma ponderação antes de serem executados e devem ser removidos da lista quando resolvidos ou respondidos)
 
-- [ ] Índice de saída está sendo calculado sobre o quadro atual, no atual momento em 41,4% um número expressivo, está realmente correto?
-- [ ] Filtros na tela inical do dashboard, está pré programado para 90 dias, exemplo: Absenteismo. Seria legal ter uma visão completa, igual para todos os indicadores, podendo filtrar interativamente para periodos especificos também. Porque hoje: Indice de Saida: Usa filtro anual. Vagas em aberto todos os registros.
-- [ ] Ocupação por setor hoje não agrega muito valor, é somente uma lista que não nós traz uma informação rapida, precisando uma leitura lenta para entender os dados, talvez aplicar em formato de grafico traria um retorno visual mais rapido.
-- [ ] Acha que já não da pra trazer graficos para a tela do dash? Hoje temos cards e lista apenas.
-- [ ] Supervisor são Gerenciados pelo Gerente.
-- [ ] Como está sendo calculado absenteismo no periodo, nos ultimos 30 dias está dando 4,1%. Quero detalhamento completo sobre os calculos que estão sendo usados. Acho que vale em escala & frequencia vale poder excluir registros, para consertar erros.
-- [ ] Acha que os filtros não vale poder escolher periodos personalizados? Ex: Do dia 10/07 a 17/07.
-- [ ] Queria começar a trabalhar janelas abrindo em formato de popup também, meio que sobrepondo a tela atual, vale revisar onde pode ser aplicado essas dinamicas.
-- [ ] Vale aplicar paginação nos associados, para evitar a fila infinita. Então limite de 30 - 50 associados.
-- [ ] Em absenteísmo vale separar melhor os dados: Ex. Por gestor podemos separar quem é Lider, Supervisor, fazendo em formato de arvore, Supervisor --> Lider A, Lider B, Lider C, Lider D... A ideia e indentificar times desmotivados e plano de ação.
-- [ ] Vale revisar locais onde podemos usar graficos, todo o site está sendo composto por lista. O retorno visual rapido é importante.
-
-
 ## Ideias adicionais — (Ainda deve passar por validação)
 
 - [ ] Ferias: Supervisores tem o seu proprio login, onde tem acesso a todos os seus associados, devem obrigatoriamente sinalizarem os dias refente as férias de cada um. Em um segundo tempo o mesmo aparece no portal do Gerente, onde é feita a aprovação ou rejeição. Em caso de aprovação a back é sinalizada, em caso de rejeição o supervisor é sinalizado.
