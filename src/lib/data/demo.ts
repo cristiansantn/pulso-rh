@@ -345,18 +345,28 @@ function desligado(
   });
 }
 
+/**
+ * O SEGREDO DA DEMO: o Caixa do turno da tarde perde gente por causa da
+ * escala. As quatro saidas do Caixa sao voluntarias, do turno da tarde e com
+ * motivo "escala"; tres delas com menos de 90 dias de casa (todo o turnover
+ * precoce vem dali). O mesmo padrao aparece no absenteismo (faltas do Caixa
+ * concentradas em domingos e segundas, quando a escala aperta) e na vaga de
+ * reposicao aberta para o proprio setor. Nenhuma tela anuncia isso: os cortes
+ * revelam quando alguem investiga.
+ */
 const desligadosIniciais: Colaborador[] = [
   desligado("p-ex-vanessa", "2901", "Vanessa", "s-caixa", "c-caixa", "p-kimbelly", "Feminino", 400, 300, "voluntario", "escala", "tarde"),
+  desligado("p-ex-priscila", "2904", "Priscila", "s-caixa", "c-caixa", "p-kimbelly", "Feminino", 320, 280, "voluntario", "escala", "tarde"),
+  desligado("p-ex-larissa", "2912", "Larissa", "s-caixa", "c-caixa", "p-kimbelly", "Feminino", 210, 150, "voluntario", "escala", "tarde"),
+  desligado("p-ex-felipe", "2909", "Felipe", "s-caixa", "c-caixa", "p-kimbelly", "Masculino", 150, 90, "voluntario", "escala", "tarde"),
   desligado("p-ex-juliana", "2902", "Juliana", "s-pd", "c-oploja", "p-luana", "Feminino", 600, 330, "voluntario", "salario"),
   desligado("p-ex-igor", "2903", "Igor", "s-oploja", "c-oploja", "p-rute", "Masculino", 700, 250, "voluntario", "salario"),
-  desligado("p-ex-priscila", "2904", "Priscila", "s-caixa", "c-caixa", "p-kimbelly", "Feminino", 320, 280, "voluntario", "adaptacao"),
   desligado("p-ex-douglas", "2905", "Douglas", "s-vm", "c-vm", "p-paola", "Masculino", 900, 200, "involuntario", "desempenho", "tarde"),
-  desligado("p-ex-taina", "2906", "Tainá", "s-sfs", "c-oploja", "p-luana", "Feminino", 260, 180, "voluntario", "nova_oportunidade"),
+  desligado("p-ex-taina", "2906", "Tainá", "s-sfs", "c-oploja", "p-luana", "Feminino", 400, 180, "voluntario", "nova_oportunidade"),
   desligado("p-ex-roberto", "2907", "Roberto", "s-vmo", "c-vm", "p-edy", "Masculino", 1100, 150, "voluntario", "distancia", "noite"),
-  desligado("p-ex-camila", "2908", "Camila", "s-oploja", "c-oploja", "p-rute", "Feminino", 500, 120, "voluntario", "escala", "tarde"),
-  desligado("p-ex-felipe", "2909", "Felipe", "s-caixa", "c-caixa", "p-kimbelly", "Masculino", 150, 90, "involuntario", "desempenho"),
+  desligado("p-ex-camila", "2908", "Camila", "s-oploja", "c-oploja", "p-rute", "Feminino", 500, 120, "voluntario", "nova_oportunidade", "tarde"),
   desligado("p-ex-simone", "2910", "Simone", "s-provadores", "c-oploja", "p-rute", "Feminino", 800, 60, "voluntario", "carreira"),
-  desligado("p-ex-leandro", "2911", "Leandro", "s-reserva", "c-oploja", "p-luana", "Masculino", 420, 30, "voluntario", "escala"),
+  desligado("p-ex-leandro", "2911", "Leandro", "s-reserva", "c-oploja", "p-luana", "Masculino", 420, 30, "voluntario", "salario"),
 ];
 
 colaboradoresIniciais.push(...desligadosIniciais);
@@ -371,40 +381,73 @@ for (const colaborador of colaboradoresIniciais) {
 
 /**
  * Faltas ficticias dos ultimos 90 dias (apenas faltas: o registro de folgas,
- * atrasos e afins esta desabilitado por enquanto). Propensao maior em alguns
- * grupos para os cortes analiticos terem relevo. Datas relativas a hoje: a
- * demo nunca fica "velha".
+ * atrasos e afins esta desabilitado por enquanto). Datas relativas a hoje: a
+ * demo nunca fica "velha". As faltas do Caixa caem de proposito em domingos e
+ * segundas — o aperto da escala de fim de semana, mesma causa das saidas do
+ * setor; o corte "por dia da semana" do absenteismo conta essa historia.
  */
 function gerarOcorrencias(): Ocorrencia[] {
   const ocorrencias: Ocorrencia[] = [];
   let sequencia = 0;
 
-  for (const colaborador of colaboradoresIniciais) {
-    if (colaborador.status === "afastado") continue;
+  const registrar = (
+    colaboradorId: string,
+    diasAtras: number,
+    injustificada: boolean,
+  ) => {
+    sequencia += 1;
+    ocorrencias.push({
+      id: `o-seed-${sequencia}`,
+      colaborador_id: colaboradorId,
+      tipo: injustificada ? "falta_injustificada" : "falta_justificada",
+      data_inicio: diasAtrasIso(diasAtras),
+      data_fim: null,
+      minutos: null,
+    });
+  };
 
-    let propensao = 0.8;
-    if (colaborador.setor_id === "s-caixa" || colaborador.setor_id === "s-oploja") {
-      propensao += 0.7;
+  // Offsets (em dias atras) que caem em domingo ou segunda-feira.
+  const diasDeAperto: number[] = [];
+  for (let d = 1; d <= 88; d += 1) {
+    const data = new Date();
+    data.setDate(data.getDate() - d);
+    if (data.getDay() === 0 || data.getDay() === 1) diasDeAperto.push(d);
+  }
+
+  for (const colaborador of colaboradoresIniciais) {
+    // Afastada nao gera falta; ex-associados tem as faltas proprias abaixo.
+    if (colaborador.status === "afastado" || colaborador.status === "desligado") {
+      continue;
     }
-    if (colaborador.turno === "noite") propensao += 0.6;
+
+    const noCaixa = colaborador.setor_id === "s-caixa";
+    let propensao = 0.7;
+    if (noCaixa) propensao += 1.1;
+    if (colaborador.setor_id === "s-oploja") propensao += 0.4;
+    if (colaborador.turno === "tarde") propensao += 0.3;
+    if (colaborador.turno === "noite") propensao += 0.5;
     if (colaborador.cargo_id === "c-supervisor" || colaborador.cargo_id === "c-lider") {
-      propensao -= 0.6;
+      propensao -= 0.5;
     }
 
     const quantidade = Math.max(0, Math.round(propensao + (aleatorio() - 0.5) * 2));
 
     for (let i = 0; i < quantidade; i += 1) {
-      sequencia += 1;
-      ocorrencias.push({
-        id: `o-seed-${sequencia}`,
-        colaborador_id: colaborador.id,
-        tipo: aleatorio() < 0.6 ? "falta_injustificada" : "falta_justificada",
-        data_inicio: diasAtrasIso(inteiro(1, 88)),
-        data_fim: null,
-        minutos: null,
-      });
+      const emDiaDeAperto = noCaixa && aleatorio() < 0.75;
+      registrar(
+        colaborador.id,
+        emDiaDeAperto ? escolher(diasDeAperto) : inteiro(1, 88),
+        aleatorio() < (noCaixa ? 0.7 : 0.5),
+      );
     }
   }
+
+  // Saida anunciada: quem pediu demissao vinha acumulando faltas nas semanas
+  // anteriores — o rastro fica visivel em Escala & Frequencia.
+  registrar("p-ex-leandro", 35, true);
+  registrar("p-ex-leandro", 43, true);
+  registrar("p-ex-leandro", 50, false);
+  registrar("p-ex-simone", 68, true);
 
   return ocorrencias;
 }
@@ -494,9 +537,11 @@ const vagasIniciais: Vaga[] = [
     id: "v-seed-2",
     setor_id: "s-caixa",
     cargo_id: "c-caixa",
-    turno: "manha" as Turno,
+    turno: "tarde" as Turno,
     motivo: "reposicao",
-    colaborador_substituido_id: null,
+    // Repoe o Felipe, que saiu por escala — a vaga aberta e mais um rastro
+    // do desgaste do Caixa da tarde.
+    colaborador_substituido_id: "p-ex-felipe",
     gestor_solicitante_id: "p-kimbelly",
     data_abertura: diasAtrasIso(38),
     data_limite: diasAtrasIso(6),
@@ -601,10 +646,10 @@ interface EstadoDemo {
 // A chave versionada descarta estados de formatos antigos que sobrevivem no
 // globalThis durante o desenvolvimento.
 const escopoGlobal = globalThis as typeof globalThis & {
-  __estadoDemoV4?: EstadoDemo;
+  __estadoDemoV5?: EstadoDemo;
 };
 
-const estado: EstadoDemo = (escopoGlobal.__estadoDemoV4 ??= {
+const estado: EstadoDemo = (escopoGlobal.__estadoDemoV5 ??= {
   setores: setoresIniciais,
   cargos: cargosIniciais,
   colaboradores: colaboradoresIniciais,
