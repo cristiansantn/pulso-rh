@@ -90,8 +90,8 @@ export default async function LoginPage({
             alt=""
             fill
             priority
-            placeholder="blur"
             sizes="56vw"
+            quality={100%}
             className="object-cover object-top"
           />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-10 pt-24 pb-8">
