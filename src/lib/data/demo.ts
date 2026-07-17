@@ -25,15 +25,15 @@ import type {
  */
 
 const setoresIniciais: Setor[] = [
-  { id: "s-caixa", nome: "Caixa", headcount_planejado: 6 },
-  { id: "s-sfs", nome: "Ship From Store", headcount_planejado: 5 },
-  { id: "s-pd", nome: "PD (Precificação Dinâmica)", headcount_planejado: 4 },
-  { id: "s-reserva", nome: "Reserva", headcount_planejado: 8 },
+  { id: "s-caixa", nome: "Caixa", headcount_planejado: 5 },
+  { id: "s-sfs", nome: "Ship From Store", headcount_planejado: 4 },
+  { id: "s-pd", nome: "PD (Precificação Dinâmica)", headcount_planejado: 3 },
+  { id: "s-reserva", nome: "Reserva", headcount_planejado: 5 },
   { id: "s-picking", nome: "Picking (Reposição)", headcount_planejado: 2 },
-  { id: "s-vm", nome: "VM", headcount_planejado: 18 },
-  { id: "s-vmo", nome: "VMO", headcount_planejado: 9 },
-  { id: "s-oploja", nome: "Operador de Loja", headcount_planejado: 10 },
-  { id: "s-provadores", nome: "Provadores", headcount_planejado: 4 },
+  { id: "s-vm", nome: "VM", headcount_planejado: 6 },
+  { id: "s-vmo", nome: "VMO", headcount_planejado: 5 },
+  { id: "s-oploja", nome: "Operador de Loja", headcount_planejado: 5 },
+  { id: "s-provadores", nome: "Provadores", headcount_planejado: 3 },
 ];
 
 const cargosIniciais: Cargo[] = [
@@ -192,14 +192,14 @@ function pessoa(
 }
 
 /**
- * Quadro real da loja apos a reorganizacao de 2026-07-16: lideres e
- * supervisores lotados nas proprias areas (Lideranca deixou de ser setor),
- * especialistas VM dentro de VM, Processos renomeado para Reserva e o novo
- * time de Picking (Reposicao). Carolina e Luana ficam na Reserva por ser a
- * maior area sob a supervisao delas.
+ * Quadro enxuto de demonstracao (ajuste de 2026-07-17): cada area tem um
+ * supervisor — Carolina (Operações: Reserva, PD, Ship From Store e Picking),
+ * Pamela (Piso: Caixa, Operador de Loja e Provadores) e Daniela (Piso
+ * Superior: VM e VMO) —, cada setor tem um lider (que pode acumular setores,
+ * como Luana e Rute) e 2-3 associados.
  */
 const colaboradoresIniciais: Colaborador[] = [
-  // Reserva (ex-Processos) e a lideranca da operacao.
+  // Operacoes (supervisora Carolina; Luana lidera Reserva, PD, SFS e Picking).
   pessoa("p-carolina", "3001", "Carolina", "s-reserva", "c-supervisor", null, {
     genero: "Feminino",
   }),
@@ -209,34 +209,37 @@ const colaboradoresIniciais: Colaborador[] = [
   pessoa("p-matheus", "3020", "Matheus", "s-reserva", "c-oploja", "p-luana", {
     genero: "Masculino",
   }),
-  pessoa("p-diogo", "3021", "Diogo", "s-reserva", "c-oploja", "p-luana", {
-    genero: "Masculino",
-  }),
   pessoa("p-bruna", "3022", "Bruna", "s-reserva", "c-oploja", "p-luana", {
     genero: "Feminino",
   }),
-  pessoa("p-henrique", "3023", "Henrique", "s-reserva", "c-oploja", "p-luana", {
-    genero: "Masculino",
-    pcd: true,
+  pessoa("p-andressa", "3017", "Andressa", "s-pd", "c-oploja", "p-luana", {
+    genero: "Feminino",
   }),
-  pessoa("p-antonio", "3024", "Antônio", "s-reserva", "c-oploja", "p-luana", {
-    genero: "Masculino",
-    tipo_contrato: "Temporário",
-    jornada: "180h",
+  pessoa("p-joice", "3018", "Joice", "s-pd", "c-oploja", "p-luana", {
+    genero: "Feminino",
   }),
-
-  // Picking (Reposicao), novo time sob a Luana.
+  pessoa("p-maiara", "3012", "Maiara", "s-sfs", "c-oploja", "p-luana", {
+    genero: "Feminino",
+  }),
+  pessoa("p-pedro", "3013", "Pedro", "s-sfs", "c-oploja", "p-luana", {
+    genero: "Masculino",
+    turno: "tarde",
+    data_admissao: diasAtrasIso(70),
+  }),
+  pessoa("p-debora", "3015", "Debora", "s-sfs", "c-oploja", "p-luana", {
+    genero: "Feminino",
+    status: "ferias",
+  }),
   pessoa("p-tiago", "3048", "Tiago", "s-picking", "c-oploja", "p-luana", {
     genero: "Masculino",
   }),
 
-  // Caixa.
-  pessoa("p-kimbelly", "3007", "Kimbelly", "s-caixa", "c-lider", "p-carolina", {
+  // Piso (supervisora Pamela; Rute lidera Operador de Loja e Provadores).
+  pessoa("p-pamela", "3002", "Pamela", "s-oploja", "c-supervisor", null, {
     genero: "Feminino",
   }),
-  pessoa("p-rute", "3008", "Rute", "s-caixa", "c-lider", "p-carolina", {
+  pessoa("p-kimbelly", "3007", "Kimbelly", "s-caixa", "c-lider", "p-pamela", {
     genero: "Feminino",
-    turno: "tarde",
   }),
   pessoa("p-layane", "3009", "Layane", "s-caixa", "c-caixa", "p-kimbelly", {
     genero: "Feminino",
@@ -246,148 +249,66 @@ const colaboradoresIniciais: Colaborador[] = [
     genero: "Feminino",
     status: "afastado",
   }),
-  pessoa("p-diana", "3011", "Diana", "s-caixa", "c-caixa", "p-rute", {
+  pessoa("p-diana", "3011", "Diana", "s-caixa", "c-caixa", "p-kimbelly", {
     genero: "Feminino",
     turno: "tarde",
     jornada: "180h",
   }),
-
-  // Ship From Store.
-  pessoa("p-maiara", "3012", "Maiara", "s-sfs", "c-oploja", "p-luana", {
+  pessoa("p-rute", "3008", "Rute", "s-oploja", "c-lider", "p-pamela", {
     genero: "Feminino",
-  }),
-  pessoa("p-pedro", "3013", "Pedro", "s-sfs", "c-oploja", "p-luana", {
-    genero: "Masculino",
     turno: "tarde",
   }),
-  pessoa("p-jesika", "3014", "Jesika", "s-sfs", "c-oploja", "p-luana", {
-    genero: "Feminino",
-    data_admissao: diasAtrasIso(70),
-  }),
-  pessoa("p-debora", "3015", "Debora", "s-sfs", "c-oploja", "p-luana", {
-    genero: "Feminino",
-    status: "ferias",
-  }),
-
-  // PD (Precificacao Dinamica).
-  pessoa("p-juliano-pd", "3016", "Juliano", "s-pd", "c-oploja", "p-luana", {
+  pessoa("p-henrique", "3023", "Henrique", "s-oploja", "c-oploja", "p-rute", {
     genero: "Masculino",
+    pcd: true,
   }),
-  pessoa("p-andressa", "3017", "Andressa", "s-pd", "c-oploja", "p-luana", {
-    genero: "Feminino",
+  pessoa("p-antonio", "3024", "Antônio", "s-oploja", "c-oploja", "p-rute", {
+    genero: "Masculino",
+    tipo_contrato: "Temporário",
+    jornada: "180h",
+    turno: "tarde",
   }),
-  pessoa("p-joice", "3018", "Joice", "s-pd", "c-oploja", "p-luana", {
-    genero: "Feminino",
-  }),
-  pessoa("p-ester", "3019", "Ester", "s-pd", "c-oploja", "p-luana", {
+  pessoa("p-ester", "3019", "Ester", "s-provadores", "c-oploja", "p-rute", {
     genero: "Feminino",
     tipo_contrato: "Jovem Aprendiz",
     jornada: "120h",
   }),
-
-  // VM: supervisao, liderancas, visual merchandisers e especialistas.
-  pessoa("p-pamela", "3002", "Pamela", "s-vm", "c-supervisor", null, {
+  pessoa("p-sara", "3032", "Sara", "s-provadores", "c-oploja", "p-rute", {
     genero: "Feminino",
+    turno: "tarde",
   }),
+
+  // Piso superior (supervisora Daniela; VM e VMO).
   pessoa("p-daniela", "3003", "Daniela", "s-vm", "c-supervisor", null, {
     genero: "Feminino",
-    turno: "tarde",
   }),
-  pessoa("p-paola", "3025", "Paola", "s-vm", "c-lider", "p-pamela", {
+  pessoa("p-paola", "3025", "Paola", "s-vm", "c-lider", "p-daniela", {
     genero: "Feminino",
-  }),
-  pessoa("p-bia", "3026", "Bia", "s-vm", "c-lider", "p-pamela", {
-    genero: "Feminino",
-    turno: "tarde",
-  }),
-  pessoa("p-anne", "3027", "Anne", "s-vm", "c-lider", "p-daniela", {
-    genero: "Feminino",
-    turno: "tarde",
   }),
   pessoa("p-rafael", "3028", "Rafael", "s-vm", "c-vm", "p-paola", {
     genero: "Masculino",
   }),
   pessoa("p-ana", "3029", "Ana", "s-vm", "c-vm", "p-paola", {
     genero: "Feminino",
-  }),
-  pessoa("p-alana", "3030", "Alana", "s-vm", "c-vm", "p-paola", {
-    genero: "Feminino",
-  }),
-  pessoa("p-day", "3031", "Day", "s-vm", "c-vm", "p-bia", {
-    genero: "Feminino",
-    turno: "tarde",
-    tipo_contrato: "Temporário",
-  }),
-  pessoa("p-sara", "3032", "Sara", "s-vm", "c-vm", "p-bia", {
-    genero: "Feminino",
-    turno: "tarde",
-    pcd: true,
-  }),
-  pessoa("p-evilyn", "3033", "Evilyn", "s-vm", "c-vm", "p-bia", {
-    genero: "Feminino",
-    turno: "tarde",
-  }),
-  pessoa("p-gabriel", "3034", "Gabriel", "s-vm", "c-vm", "p-anne", {
-    genero: "Masculino",
-    turno: "tarde",
-    status: "ferias",
-  }),
-  pessoa("p-nicolas", "3035", "Nicolas", "s-vm", "c-vm", "p-anne", {
-    genero: "Masculino",
-    turno: "tarde",
-    tipo_contrato: "Jovem Aprendiz",
-    jornada: "120h",
-  }),
-  pessoa("p-akira", "3036", "Akira", "s-vm", "c-vm", "p-anne", {
-    genero: "Prefiro não informar",
     turno: "tarde",
     data_admissao: diasAtrasIso(30),
   }),
-  pessoa("p-alef", "3044", "Alef", "s-vm", "c-evm", "p-pamela", {
+  pessoa("p-alef", "3044", "Alef", "s-vm", "c-evm", "p-paola", {
     genero: "Masculino",
   }),
-  pessoa("p-juliano-evm", "3045", "Juliano", "s-vm", "c-evm", "p-pamela", {
+  pessoa("p-edy", "3037", "Edy", "s-vmo", "c-lider", "p-daniela", {
     genero: "Masculino",
-  }),
-  pessoa("p-bruno", "3046", "Bruno", "s-vm", "c-evm", "p-daniela", {
-    genero: "Masculino",
-    turno: "tarde",
-  }),
-  pessoa("p-sthe", "3047", "Sthe", "s-vm", "c-evm", "p-daniela", {
-    genero: "Feminino",
-    turno: "tarde",
-  }),
-
-  // VMO trabalha na abertura e no fechamento da loja.
-  pessoa("p-lucas", "3004", "Lucas", "s-vmo", "c-supervisor", null, {
-    genero: "Masculino",
-  }),
-  pessoa("p-renata", "3005", "Renata", "s-vmo", "c-supervisor", null, {
-    genero: "Feminino",
-    turno: "noite",
-  }),
-  pessoa("p-edy", "3037", "Edy", "s-vmo", "c-lider", "p-lucas", {
-    genero: "Masculino",
-  }),
-  pessoa("p-maria", "3038", "Maria", "s-vmo", "c-lider", "p-lucas", {
-    genero: "Feminino",
-    turno: "noite",
-  }),
-  pessoa("p-vitoria", "3039", "Vitoria", "s-vmo", "c-lider", "p-renata", {
-    genero: "Feminino",
     turno: "noite",
   }),
   pessoa("p-savana", "3040", "Savana", "s-vmo", "c-vm", "p-edy", {
     genero: "Feminino",
+    turno: "noite",
   }),
-  pessoa("p-gabriela", "3041", "Gabriela", "s-vmo", "c-vm", "p-edy", {
-    genero: "Feminino",
-  }),
-  pessoa("p-welington", "3042", "Welington", "s-vmo", "c-vm", "p-maria", {
+  pessoa("p-welington", "3042", "Welington", "s-vmo", "c-vm", "p-edy", {
     genero: "Masculino",
     turno: "noite",
   }),
-  pessoa("p-raquel", "3043", "Raquel", "s-vmo", "c-vm", "p-vitoria", {
+  pessoa("p-raquel", "3043", "Raquel", "s-vmo", "c-vm", "p-edy", {
     genero: "Feminino",
     turno: "noite",
   }),
@@ -402,35 +323,23 @@ for (const colaborador of colaboradoresIniciais) {
 }
 
 /**
- * Frequencia ficticia dos ultimos 90 dias, com propensao maior em alguns
- * grupos (Caixa, Reserva e turno da tarde/noite) para os cortes analiticos
- * terem relevo. Datas sao relativas a hoje: a demo nunca fica "velha".
+ * Faltas ficticias dos ultimos 90 dias (apenas faltas: o registro de folgas,
+ * atrasos e afins esta desabilitado por enquanto). Propensao maior em alguns
+ * grupos para os cortes analiticos terem relevo. Datas relativas a hoje: a
+ * demo nunca fica "velha".
  */
 function gerarOcorrencias(): Ocorrencia[] {
   const ocorrencias: Ocorrencia[] = [];
   let sequencia = 0;
 
-  const TIPOS_SORTEIO = [
-    "atraso",
-    "atraso",
-    "atraso",
-    "falta_injustificada",
-    "falta_injustificada",
-    "falta_justificada",
-    "saida_antecipada",
-    "folga",
-    "folga",
-  ] as const;
-
   for (const colaborador of colaboradoresIniciais) {
     if (colaborador.status === "afastado") continue;
 
-    let propensao = 0.9;
-    if (colaborador.setor_id === "s-caixa" || colaborador.setor_id === "s-reserva") {
-      propensao += 0.8;
+    let propensao = 0.8;
+    if (colaborador.setor_id === "s-caixa" || colaborador.setor_id === "s-oploja") {
+      propensao += 0.7;
     }
-    if (colaborador.turno === "tarde") propensao += 0.4;
-    if (colaborador.turno === "noite") propensao += 0.7;
+    if (colaborador.turno === "noite") propensao += 0.6;
     if (colaborador.cargo_id === "c-supervisor" || colaborador.cargo_id === "c-lider") {
       propensao -= 0.6;
     }
@@ -438,45 +347,17 @@ function gerarOcorrencias(): Ocorrencia[] {
     const quantidade = Math.max(0, Math.round(propensao + (aleatorio() - 0.5) * 2));
 
     for (let i = 0; i < quantidade; i += 1) {
-      const tipo = escolher(TIPOS_SORTEIO);
-      const inicio = diasAtrasIso(inteiro(1, 88));
       sequencia += 1;
-
       ocorrencias.push({
         id: `o-seed-${sequencia}`,
         colaborador_id: colaborador.id,
-        tipo,
-        data_inicio: inicio,
+        tipo: aleatorio() < 0.6 ? "falta_injustificada" : "falta_justificada",
+        data_inicio: diasAtrasIso(inteiro(1, 88)),
         data_fim: null,
-        minutos:
-          tipo === "atraso"
-            ? inteiro(10, 55)
-            : tipo === "saida_antecipada"
-              ? inteiro(30, 120)
-              : null,
+        minutos: null,
       });
     }
   }
-
-  // Ferias em curso, coerentes com o status dos dois colaboradores.
-  ocorrencias.push(
-    {
-      id: "o-seed-ferias-1",
-      colaborador_id: "p-debora",
-      tipo: "ferias",
-      data_inicio: diasAtrasIso(5),
-      data_fim: diasAtrasIso(-9),
-      minutos: null,
-    },
-    {
-      id: "o-seed-ferias-2",
-      colaborador_id: "p-gabriel",
-      tipo: "ferias",
-      data_inicio: diasAtrasIso(3),
-      data_fim: diasAtrasIso(-11),
-      minutos: null,
-    },
-  );
 
   return ocorrencias;
 }
@@ -511,14 +392,6 @@ const afastamentosIniciais: Afastamento[] = [
   },
   {
     id: "a-seed-4",
-    colaborador_id: "p-diogo",
-    tipo: "atestado",
-    categoria: "doenca",
-    data_inicio: diasAtrasIso(18),
-    data_fim: diasAtrasIso(17),
-  },
-  {
-    id: "a-seed-5",
     colaborador_id: "p-joice",
     tipo: "atestado",
     categoria: "acompanhamento_familiar",
@@ -526,8 +399,8 @@ const afastamentosIniciais: Afastamento[] = [
     data_fim: diasAtrasIso(9),
   },
   {
-    id: "a-seed-6",
-    colaborador_id: "p-evilyn",
+    id: "a-seed-5",
+    colaborador_id: "p-sara",
     tipo: "atestado",
     categoria: "doenca",
     data_inicio: diasAtrasIso(33),
@@ -559,7 +432,7 @@ const vagasIniciais: Vaga[] = [
     turno: "tarde" as Turno,
     motivo: "expansao",
     colaborador_substituido_id: null,
-    gestor_solicitante_id: "p-carolina",
+    gestor_solicitante_id: "p-pamela",
     data_abertura: diasAtrasIso(22),
     data_limite: diasAtrasIso(-8),
     etapa: "entrevista",
@@ -568,7 +441,7 @@ const vagasIniciais: Vaga[] = [
     admitido_colaborador_id: null,
     setor: nomeSetor("s-oploja"),
     cargo: nomeCargo("c-oploja"),
-    gestor_solicitante: nomeDe("p-carolina"),
+    gestor_solicitante: nomeDe("p-pamela"),
   },
   {
     id: "v-seed-2",
@@ -595,16 +468,16 @@ const vagasIniciais: Vaga[] = [
     turno: "tarde" as Turno,
     motivo: "expansao",
     colaborador_substituido_id: null,
-    gestor_solicitante_id: "p-pamela",
+    gestor_solicitante_id: "p-daniela",
     data_abertura: diasAtrasIso(62),
     data_limite: diasAtrasIso(25),
     etapa: "admissao",
     status: "concluida",
     data_fechamento: diasAtrasIso(30),
-    admitido_colaborador_id: "p-akira",
+    admitido_colaborador_id: "p-ana",
     setor: nomeSetor("s-vm"),
     cargo: nomeCargo("c-vm"),
-    gestor_solicitante: nomeDe("p-pamela"),
+    gestor_solicitante: nomeDe("p-daniela"),
   },
   {
     id: "v-seed-4",
@@ -619,7 +492,7 @@ const vagasIniciais: Vaga[] = [
     etapa: "admissao",
     status: "concluida",
     data_fechamento: diasAtrasIso(70),
-    admitido_colaborador_id: "p-jesika",
+    admitido_colaborador_id: "p-pedro",
     setor: nomeSetor("s-sfs"),
     cargo: nomeCargo("c-oploja"),
     gestor_solicitante: nomeDe("p-luana"),
@@ -681,10 +554,10 @@ interface EstadoDemo {
 // A chave versionada descarta estados de formatos antigos que sobrevivem no
 // globalThis durante o desenvolvimento.
 const escopoGlobal = globalThis as typeof globalThis & {
-  __estadoDemoV2?: EstadoDemo;
+  __estadoDemoV3?: EstadoDemo;
 };
 
-const estado: EstadoDemo = (escopoGlobal.__estadoDemoV2 ??= {
+const estado: EstadoDemo = (escopoGlobal.__estadoDemoV3 ??= {
   setores: setoresIniciais,
   cargos: cargosIniciais,
   colaboradores: colaboradoresIniciais,

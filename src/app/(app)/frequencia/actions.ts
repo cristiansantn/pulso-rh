@@ -10,7 +10,7 @@ import { criarAfastamento, criarOcorrencia } from "@/lib/data/frequencia";
 import {
   CATEGORIAS_AFASTAMENTO,
   TIPOS_AFASTAMENTO,
-  TIPOS_OCORRENCIA,
+  TIPOS_OCORRENCIA_ATIVOS,
   type CategoriaAfastamento,
   type TipoAfastamento,
   type TipoOcorrencia,
@@ -40,17 +40,10 @@ export async function registrarOcorrencia(formData: FormData) {
   const tipo = texto(formData, "tipo") as TipoOcorrencia | null;
   const dataInicio = texto(formData, "data_inicio");
   const dataFim = texto(formData, "data_fim");
-  const minutosTexto = texto(formData, "minutos");
 
-  if (!colaboradorId || !tipo || !(tipo in TIPOS_OCORRENCIA) || !dataInicio) {
+  // Somente faltas por enquanto; os demais tipos entram com a escala planejada.
+  if (!colaboradorId || !tipo || !(tipo in TIPOS_OCORRENCIA_ATIVOS) || !dataInicio) {
     redirect("/frequencia/nova?erro=obrigatorios");
-  }
-
-  const pontual = tipo === "atraso" || tipo === "saida_antecipada";
-  const minutos = minutosTexto ? Number(minutosTexto) : null;
-
-  if (pontual && (!Number.isInteger(minutos) || (minutos as number) <= 0)) {
-    redirect("/frequencia/nova?erro=minutos");
   }
   if (dataFim && dataFim < dataInicio) {
     redirect("/frequencia/nova?erro=periodo");
@@ -60,14 +53,9 @@ export async function registrarOcorrencia(formData: FormData) {
     colaborador_id: colaboradorId,
     tipo,
     data_inicio: dataInicio,
-    data_fim: pontual ? null : dataFim,
-    minutos: pontual ? minutos : null,
+    data_fim: dataFim,
+    minutos: null,
   });
-
-  // Ferias em curso mudam o status no cadastro; o retorno e registrado na ficha.
-  if (tipo === "ferias" && periodoIncluiHoje(dataInicio, dataFim)) {
-    await atualizarColaborador(colaboradorId, { status: "ferias" });
-  }
 
   revalidarFrequencia(colaboradorId);
   redirect("/frequencia");

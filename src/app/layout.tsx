@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Pulso | People Analytics",
+  title: "Painel de Controle | People Analytics",
   description: "Gestão de pessoas e analytics da operação de loja",
   icons: { icon: "/logo-cea.webp" },
 };

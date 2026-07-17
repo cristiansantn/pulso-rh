@@ -8,7 +8,7 @@ import { hojeIso } from "@/lib/datas";
 import { registrarAfastamento } from "../actions";
 
 const MENSAGENS_ERRO: Record<string, string> = {
-  obrigatorios: "Preencha colaborador, tipo, categoria e data de início.",
+  obrigatorios: "Preencha associado, tipo, categoria e data de início.",
   periodo: "O retorno previsto não pode ser anterior à data de início.",
 };
 
@@ -45,7 +45,7 @@ export default async function NovoAfastamentoPage({
       <form action={registrarAfastamento} className="max-w-3xl space-y-6">
         <Fieldset legenda="Afastamento">
           <div className="sm:col-span-2">
-            <Label htmlFor="colaborador_id">Colaborador</Label>
+            <Label htmlFor="colaborador_id">Associado</Label>
             <Select id="colaborador_id" name="colaborador_id" required defaultValue="">
               <option value="" disabled>
                 Selecione
@@ -103,7 +103,7 @@ export default async function NovoAfastamentoPage({
         </Fieldset>
 
         <p className="text-xs text-ink-muted">
-          Afastamentos em curso mudam o status do colaborador para Afastado; o
+          Afastamentos em curso mudam o status do associado para Afastado; o
           retorno é registrado na ficha individual.
         </p>
 

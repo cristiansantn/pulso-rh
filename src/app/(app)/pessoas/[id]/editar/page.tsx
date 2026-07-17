@@ -31,7 +31,7 @@ export default async function EditarColaboradorPage({
   return (
     <>
       <PageHeader
-        titulo="Editar colaborador"
+        titulo="Editar associado"
         descricao={`${colaborador.nome} — matrícula ${colaborador.matricula}`}
       />
 

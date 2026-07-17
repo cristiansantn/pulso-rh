@@ -3,13 +3,12 @@ import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { PageHeader } from "@/components/ui/page-header";
 import { Fieldset, Input, Label, Select } from "@/components/ui/form";
 import { listarColaboradores } from "@/lib/data/colaboradores";
-import { TIPOS_OCORRENCIA } from "@/lib/data/tipos";
+import { TIPOS_OCORRENCIA_ATIVOS } from "@/lib/data/tipos";
 import { hojeIso } from "@/lib/datas";
 import { registrarOcorrencia } from "../actions";
 
 const MENSAGENS_ERRO: Record<string, string> = {
-  obrigatorios: "Preencha colaborador, tipo e data de início.",
-  minutos: "Atraso e saída antecipada exigem os minutos perdidos (número inteiro, maior que zero).",
+  obrigatorios: "Preencha associado, tipo e data de início.",
   periodo: "A data final não pode ser anterior à data de início.",
 };
 
@@ -33,8 +32,8 @@ export default async function NovaOcorrenciaPage({
       </Link>
 
       <PageHeader
-        titulo="Registrar ocorrência"
-        descricao="Faltas, atrasos, saídas antecipadas, folgas e férias. Atestados e afastamentos têm registro próprio."
+        titulo="Registrar falta"
+        descricao="Justificada ou injustificada. Atestados e afastamentos têm registro próprio; folgas e atrasos entram junto com a escala planejada."
       />
 
       {erro && MENSAGENS_ERRO[erro] && (
@@ -44,9 +43,9 @@ export default async function NovaOcorrenciaPage({
       )}
 
       <form action={registrarOcorrencia} className="max-w-3xl space-y-6">
-        <Fieldset legenda="Ocorrência">
+        <Fieldset legenda="Falta">
           <div className="sm:col-span-2">
-            <Label htmlFor="colaborador_id">Colaborador</Label>
+            <Label htmlFor="colaborador_id">Associado</Label>
             <Select id="colaborador_id" name="colaborador_id" required defaultValue="">
               <option value="" disabled>
                 Selecione
@@ -64,22 +63,12 @@ export default async function NovaOcorrenciaPage({
               <option value="" disabled>
                 Selecione
               </option>
-              {Object.entries(TIPOS_OCORRENCIA).map(([valor, rotulo]) => (
+              {Object.entries(TIPOS_OCORRENCIA_ATIVOS).map(([valor, rotulo]) => (
                 <option key={valor} value={valor}>
                   {rotulo}
                 </option>
               ))}
             </Select>
-          </div>
-          <div>
-            <Label htmlFor="minutos">Minutos perdidos</Label>
-            <Input
-              id="minutos"
-              name="minutos"
-              type="number"
-              min={1}
-              placeholder="Só atraso e saída antecipada"
-            />
           </div>
           <div>
             <Label htmlFor="data_inicio">Data de início</Label>
@@ -99,11 +88,6 @@ export default async function NovaOcorrenciaPage({
             </p>
           </div>
         </Fieldset>
-
-        <p className="text-xs text-ink-muted">
-          Férias em curso mudam o status do colaborador no cadastro; o retorno é
-          registrado na ficha individual.
-        </p>
 
         <div className="flex items-center gap-3">
           <button

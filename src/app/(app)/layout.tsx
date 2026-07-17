@@ -23,7 +23,7 @@ export default async function AppLayout({
             className="shrink-0"
           />
           <div>
-            <p className="text-sm font-semibold tracking-tight">Pulso</p>
+            <p className="text-sm font-semibold tracking-tight">Painel de Controle</p>
             <p className="text-xs text-ink-muted">People Analytics C&amp;A</p>
           </div>
         </div>

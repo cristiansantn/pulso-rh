@@ -132,6 +132,16 @@ export const TIPOS_OCORRENCIA: Record<TipoOcorrencia, string> = {
   ferias: "Férias",
 };
 
+/**
+ * Tipos habilitados no registro manual. Por decisao de produto (2026-07-17),
+ * apenas faltas por enquanto; folgas, atrasos e afins entram quando a escala
+ * planejada existir. Os demais tipos seguem validos para leitura.
+ */
+export const TIPOS_OCORRENCIA_ATIVOS: Partial<Record<TipoOcorrencia, string>> = {
+  falta_injustificada: "Falta injustificada",
+  falta_justificada: "Falta justificada",
+};
+
 /** Tipos de ocorrencia que contam como dia perdido no absenteismo. */
 export const TIPOS_DIA_PERDIDO: TipoOcorrencia[] = [
   "falta_injustificada",

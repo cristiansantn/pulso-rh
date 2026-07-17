@@ -1,5 +1,7 @@
 import Image from "next/image";
+import fundoLogin from "../../../public/login-fundo.webp";
 import { login, loginDemo } from "@/lib/auth/actions";
+import { BotaoEnviar } from "@/components/ui/botao-enviar";
 import { Input, Label } from "@/components/ui/form";
 import { isSupabaseConfigured } from "@/lib/env";
 
@@ -24,7 +26,7 @@ export default async function LoginPage({
           <div className="flex items-center gap-3">
             <Image src="/logo-cea.webp" alt="C&A" width={44} height={44} />
             <div>
-              <p className="text-base font-semibold tracking-tight">Pulso</p>
+              <p className="text-base font-semibold tracking-tight">Painel de Controle</p>
               <p className="text-xs text-ink-muted">People Analytics C&amp;A</p>
             </div>
           </div>
@@ -63,22 +65,16 @@ export default async function LoginPage({
               </p>
             )}
 
-            <button
-              type="submit"
-              className="w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-panel transition-colors hover:bg-brand-strong"
-            >
+            <BotaoEnviar className="flex w-full items-center justify-center gap-2 rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-panel transition-colors hover:bg-brand-strong disabled:opacity-70">
               Entrar
-            </button>
+            </BotaoEnviar>
           </form>
 
           {!configurado && (
             <form action={loginDemo} className="mt-4">
-              <button
-                type="submit"
-                className="w-full rounded-md border border-line px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-neutral-soft/60"
-              >
+              <BotaoEnviar className="flex w-full items-center justify-center gap-2 rounded-md border border-line px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-neutral-soft/60 disabled:opacity-70">
                 Entrar em modo demonstração
-              </button>
+              </BotaoEnviar>
               <p className="mt-3 text-center text-xs text-ink-muted">
                 Supabase não configurado. O modo demonstração usa dados fictícios.
               </p>
@@ -90,12 +86,11 @@ export default async function LoginPage({
       <div className="relative hidden pl-3 lg:block lg:w-[56%]">
         <div className="relative h-full w-full overflow-hidden">
           <Image
-            src="/login-fundo.webp"
+            src={fundoLogin}
             alt=""
             fill
             priority
-            unoptimized
-            quality={100}
+            placeholder="blur"
             sizes="56vw"
             className="object-cover object-top"
           />

@@ -26,7 +26,7 @@ export default async function NovoColaboradorPage({
   return (
     <>
       <PageHeader
-        titulo="Novo colaborador"
+        titulo="Novo associado"
         descricao="Os dados demográficos são de preenchimento voluntário e usados apenas de forma agregada."
       />
 

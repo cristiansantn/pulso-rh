@@ -39,7 +39,7 @@ const SECOES: SecaoNav[] = [
     titulo: "Operação",
     itens: [
       { href: "/", rotulo: "Visão Geral", icone: House },
-      { href: "/pessoas", rotulo: "Pessoas", icone: Users },
+      { href: "/pessoas", rotulo: "Associados", icone: Users },
       { href: "/estrutura", rotulo: "Estrutura da Operação", icone: Storefront },
       { href: "/frequencia", rotulo: "Escala & Frequência", icone: CalendarBlank },
     ],

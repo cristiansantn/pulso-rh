@@ -117,7 +117,7 @@ export default async function SetorPage({
         <section className="rounded-lg border border-line bg-panel p-6">
           <h2 className="text-sm font-semibold">Editar setor</h2>
           <p className="mt-1 text-xs text-ink-muted">
-            A renomeação vale para todos os colaboradores e vagas vinculados.
+            A renomeação vale para todos os associados e vagas vinculados.
           </p>
           <form action={salvarSetor.bind(null, setor.id)} className="mt-4 space-y-3">
             <div>
@@ -195,7 +195,7 @@ export default async function SetorPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs text-ink-muted">
-              <th className="px-6 py-2.5 font-medium">Colaborador</th>
+              <th className="px-6 py-2.5 font-medium">Associado</th>
               <th className="px-6 py-2.5 font-medium">Cargo</th>
               <th className="px-6 py-2.5 font-medium">Gestor</th>
               <th className="px-6 py-2.5 font-medium">Admissão</th>

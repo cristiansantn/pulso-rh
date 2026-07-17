@@ -48,15 +48,15 @@ export default async function PessoasPage({
   return (
     <>
       <PageHeader
-        titulo="Pessoas"
-        descricao="Cadastro dos colaboradores da operação."
+        titulo="Associados"
+        descricao="Cadastro dos associados da operação."
       >
         <Link
           href="/pessoas/nova"
           className="flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-panel transition-opacity hover:opacity-90"
         >
           <Plus size={15} weight="bold" />
-          Novo colaborador
+          Novo associado
         </Link>
       </PageHeader>
 
@@ -126,7 +126,7 @@ export default async function PessoasPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs text-ink-muted">
-              <th className="px-6 py-2.5 font-medium">Colaborador</th>
+              <th className="px-6 py-2.5 font-medium">Associado</th>
               <th className="px-6 py-2.5 font-medium">Setor</th>
               <th className="px-6 py-2.5 font-medium">Cargo</th>
               <th className="px-6 py-2.5 font-medium">Gestor</th>
@@ -138,7 +138,7 @@ export default async function PessoasPage({
             {colaboradores.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-6 py-10 text-center text-ink-muted">
-                  Nenhum colaborador encontrado.
+                  Nenhum associado encontrado.
                 </td>
               </tr>
             )}

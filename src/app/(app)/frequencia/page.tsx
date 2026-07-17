@@ -70,8 +70,9 @@ export default async function FrequenciaPage({
   const faltas = ocorrencias.filter(
     (o) => o.tipo === "falta_injustificada" || o.tipo === "falta_justificada",
   );
-  const atrasos = ocorrencias.filter((o) => o.tipo === "atraso");
-  const minutosAtraso = atrasos.reduce((total, o) => total + (o.minutos ?? 0), 0);
+  const faltasInjustificadas = faltas.filter(
+    (o) => o.tipo === "falta_injustificada",
+  );
 
   const diasPerdidos = listarDiasPerdidos(ocorrencias, afastamentos, periodo);
   const taxa = taxaAbsenteismo(diasPerdidos.length, quadroAtual.length, periodo);
@@ -86,7 +87,7 @@ export default async function FrequenciaPage({
     <>
       <PageHeader
         titulo="Escala & Frequência"
-        descricao="Faltas, atrasos, folgas, férias e afastamentos. Escala planejada x realizada e banco de horas entram no próximo incremento da Fase 3."
+        descricao="Faltas e afastamentos da operação. Folgas, atrasos, escala planejada x realizada e banco de horas entram nos próximos incrementos."
       >
         <Link
           href="/frequencia/afastamento"
@@ -100,7 +101,7 @@ export default async function FrequenciaPage({
           className="flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-panel transition-opacity hover:opacity-90"
         >
           <Plus size={15} />
-          Registrar ocorrência
+          Registrar falta
         </Link>
       </PageHeader>
 
@@ -139,9 +140,9 @@ export default async function FrequenciaPage({
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <KpiCard rotulo="Faltas no período" valor={String(faltas.length)} />
         <KpiCard
-          rotulo="Atrasos no período"
-          valor={String(atrasos.length)}
-          detalhe={`${minutosAtraso} minutos perdidos`}
+          rotulo="Injustificadas"
+          valor={String(faltasInjustificadas.length)}
+          detalhe="Faltas sem justificativa no período"
         />
         <KpiCard
           rotulo="Afastamentos em curso"
@@ -161,7 +162,7 @@ export default async function FrequenciaPage({
       <section className="mt-6 overflow-hidden rounded-lg border border-line bg-panel">
         <div className="border-b border-line px-6 py-4">
           <h2 className="text-sm font-semibold">
-            Ocorrências — {PERIODOS[String(periodoDias)].toLowerCase()}
+            Faltas — {PERIODOS[String(periodoDias)].toLowerCase()}
           </h2>
           <p className="mt-0.5 text-xs text-ink-muted">
             O histórico completo de cada pessoa fica na ficha individual.
@@ -170,21 +171,20 @@ export default async function FrequenciaPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs text-ink-muted">
-              <th className="px-6 py-2.5 font-medium">Colaborador</th>
+              <th className="px-6 py-2.5 font-medium">Associado</th>
               <th className="px-6 py-2.5 font-medium">Tipo</th>
               <th className="px-6 py-2.5 font-medium">Período</th>
-              <th className="px-6 py-2.5 text-right font-medium">Minutos</th>
             </tr>
           </thead>
           <tbody>
-            {ocorrencias.length === 0 && (
+            {faltas.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-6 py-10 text-center text-ink-muted">
-                  Nenhuma ocorrência registrada no período.
+                <td colSpan={3} className="px-6 py-10 text-center text-ink-muted">
+                  Nenhuma falta registrada no período.
                 </td>
               </tr>
             )}
-            {ocorrencias.map((o) => (
+            {faltas.map((o) => (
               <tr
                 key={o.id}
                 className="border-b border-line transition-colors last:border-0 hover:bg-surface"
@@ -198,7 +198,6 @@ export default async function FrequenciaPage({
                 <td className="px-6 py-3 text-ink-soft">
                   {formatarPeriodo(o.data_inicio, o.data_fim)}
                 </td>
-                <td className="px-6 py-3 text-right text-ink-soft">{o.minutos ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -218,7 +217,7 @@ export default async function FrequenciaPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs text-ink-muted">
-              <th className="px-6 py-2.5 font-medium">Colaborador</th>
+              <th className="px-6 py-2.5 font-medium">Associado</th>
               <th className="px-6 py-2.5 font-medium">Tipo</th>
               <th className="px-6 py-2.5 font-medium">Categoria</th>
               <th className="px-6 py-2.5 font-medium">Início</th>
