@@ -1,15 +1,16 @@
 import Image from "next/image";
-import { SignOut } from "@phosphor-icons/react/dist/ssr";
+import { SignOut, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import { Sidebar } from "@/components/layout/sidebar";
-import { logout } from "@/lib/auth/actions";
+import { logout, sessaoLocal } from "@/lib/auth/actions";
 import { isSupabaseConfigured } from "@/lib/env";
 
 /** Layout das paginas autenticadas: sidebar fixa e area de conteudo. */
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const sessao = await sessaoLocal();
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-panel">
@@ -30,6 +31,15 @@ export default function AppLayout({
         <Sidebar />
 
         <div className="border-t border-line p-3">
+          {sessao && (
+            <div className="mb-2 flex items-center gap-2.5 px-3 py-1.5">
+              <UserCircle size={26} className="shrink-0 text-ink-muted" />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{sessao.nome}</p>
+                <p className="truncate text-xs text-ink-muted">{sessao.papel}</p>
+              </div>
+            </div>
+          )}
           {!isSupabaseConfigured() && (
             <p className="mb-2 rounded-md bg-warning-soft px-3 py-2 text-xs text-warning">
               Modo demonstração: dados fictícios, sem persistência.

@@ -4,8 +4,8 @@ import { Input, Label } from "@/components/ui/form";
 import { isSupabaseConfigured } from "@/lib/env";
 
 const MENSAGENS_ERRO: Record<string, string> = {
-  credenciais: "E-mail ou senha inválidos.",
-  "campos-obrigatorios": "Informe e-mail e senha.",
+  credenciais: "Usuário ou senha inválidos.",
+  "campos-obrigatorios": "Informe usuário e senha.",
   "nao-configurado": "Banco de dados não configurado. Use o modo demonstração.",
 };
 
@@ -38,13 +38,13 @@ export default async function LoginPage({
 
           <form action={login} className="mt-8 space-y-4">
             <div>
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="usuario">Usuário</Label>
               <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder=""
+                id="usuario"
+                name="usuario"
+                type="text"
+                autoComplete="username"
+                placeholder="Matrícula ou e-mail"
               />
             </div>
             <div>
