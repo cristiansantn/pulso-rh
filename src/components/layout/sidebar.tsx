@@ -47,7 +47,7 @@ const SECOES: SecaoNav[] = [
   {
     titulo: "Análise",
     itens: [
-      { href: "/performance", rotulo: "Performance", icone: ChartLineUp, emBreve: true },
+      { href: "/performance", rotulo: "Performance", icone: ChartLineUp },
       { href: "/perfis", rotulo: "Perfis & Competências", icone: UserFocus, emBreve: true },
       { href: "/talentos", rotulo: "Talentos & Sucessão", icone: Medal, emBreve: true },
       { href: "/turnover", rotulo: "Turnover", icone: Swap },

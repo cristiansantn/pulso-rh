@@ -279,3 +279,112 @@ export interface VagaEvento {
   etapa: EtapaVaga;
   data: string;
 }
+
+/** Performance e produtividade (Fase 6). */
+
+export type TipoIndicador =
+  | "pecas_hora"
+  | "conversao"
+  | "ticket_medio"
+  | "nps"
+  | "sla_no_prazo"
+  | "execucao_planograma";
+
+export interface DefinicaoIndicador {
+  rotulo: string;
+  /** Sufixo de exibicao; vazio quando o formato ja carrega a unidade (R$, %). */
+  unidade: string;
+  /** Sentido de leitura; hoje todos sao maior_melhor, o campo antecipa futuros. */
+  direcao: "maior_melhor" | "menor_melhor";
+  /** Casas decimais na exibicao. */
+  casas: number;
+  formato: "numero" | "percentual" | "moeda";
+}
+
+/**
+ * Catalogo fechado de indicadores operacionais. Quais indicadores se aplicam
+ * a cada grupo nao esta fixado aqui: emerge dos proprios lancamentos.
+ */
+export const INDICADORES: Record<TipoIndicador, DefinicaoIndicador> = {
+  pecas_hora: {
+    rotulo: "Peças por hora",
+    unidade: "peças/h",
+    direcao: "maior_melhor",
+    casas: 1,
+    formato: "numero",
+  },
+  conversao: {
+    rotulo: "Conversão",
+    unidade: "",
+    direcao: "maior_melhor",
+    casas: 1,
+    formato: "percentual",
+  },
+  ticket_medio: {
+    rotulo: "Ticket médio",
+    unidade: "",
+    direcao: "maior_melhor",
+    casas: 2,
+    formato: "moeda",
+  },
+  nps: {
+    rotulo: "NPS",
+    unidade: "pontos",
+    direcao: "maior_melhor",
+    casas: 0,
+    formato: "numero",
+  },
+  sla_no_prazo: {
+    rotulo: "SLA no prazo",
+    unidade: "",
+    direcao: "maior_melhor",
+    casas: 1,
+    formato: "percentual",
+  },
+  execucao_planograma: {
+    rotulo: "Execução de planograma",
+    unidade: "",
+    direcao: "maior_melhor",
+    casas: 1,
+    formato: "percentual",
+  },
+};
+
+/** Valor mensal de um indicador operacional lancado para uma pessoa. */
+export interface IndicadorMensal {
+  id: string;
+  colaborador_id: string;
+  /** Competencia fechada no formato YYYY-MM. */
+  competencia: string;
+  tipo: TipoIndicador;
+  valor: number;
+}
+
+export type NovoIndicadorMensal = Omit<IndicadorMensal, "id">;
+
+/** Escala 1-3: o 9-box e 3x3; escala maior fingiria precisao que nao existe. */
+export type NotaAvaliacao = 1 | 2 | 3;
+
+/** Avaliacao de performance x potencial por ciclo; base da matriz 9-box. */
+export interface Avaliacao {
+  id: string;
+  colaborador_id: string;
+  /** Ciclo semestral no formato YYYY-SN (ex.: 2026-S1). */
+  ciclo: string;
+  performance: NotaAvaliacao;
+  potencial: NotaAvaliacao;
+}
+
+export type NovaAvaliacao = Omit<Avaliacao, "id">;
+
+export const NOTAS_PERFORMANCE: Record<NotaAvaliacao, string> = {
+  1: "Abaixo do esperado",
+  2: "Dentro do esperado",
+  3: "Acima do esperado",
+};
+
+export const NOTAS_POTENCIAL: Record<NotaAvaliacao, string> = {
+  1: "Baixo",
+  2: "Médio",
+  3: "Alto",
+};

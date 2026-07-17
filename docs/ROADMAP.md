@@ -66,9 +66,11 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 
 ## Fase 6 — Performance e Produtividade
 
-- [ ] Indicadores por funcao (pecas/hora, conversao, NPS, ticket medio, SLA...)
-- [ ] Visao por pessoa, equipe, setor, turno e gestor
-- [ ] Matriz Performance x Potencial (9-box)
+- [x] Indicadores por funcao (pecas/hora, conversao, NPS, ticket medio, SLA...)
+- [x] Visao por pessoa, equipe, setor, turno e gestor
+- [x] Matriz Performance x Potencial (9-box)
+      (leitura pela demo/seed; o lancamento de indicadores e avaliacoes pela
+      interface entra em fase posterior)
 
 ## Fase 7 — Perfil Comportamental
 

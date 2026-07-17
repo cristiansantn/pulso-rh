@@ -1,10 +1,15 @@
-import { diasAtrasIso } from "@/lib/datas";
+import { diasAtrasIso, formatarIsoLocal } from "@/lib/datas";
+import { INDICADORES } from "./tipos";
 import type {
   Afastamento,
+  Avaliacao,
   Cargo,
   Colaborador,
+  IndicadorMensal,
+  NotaAvaliacao,
   Ocorrencia,
   Setor,
+  TipoIndicador,
   Turno,
   Vaga,
   VagaEvento,
@@ -633,6 +638,193 @@ const vagaEventosIniciais: VagaEvento[] = [
   ]),
 ];
 
+/**
+ * Fase 6: indicadores mensais e avaliacoes. Os geradores abaixo rodam DEPOIS
+ * dos anteriores de proposito — todos consomem a mesma sequencia do PRNG, e
+ * inserir chamadas antes deslocaria o quadro inteiro.
+ *
+ * O mapeamento setor -> indicadores existe apenas aqui, no seed: as paginas
+ * derivam "quais indicadores este grupo tem" dos proprios lancamentos.
+ */
+
+const INDICADORES_POR_SETOR: Record<string, TipoIndicador[]> = {
+  "s-caixa": ["conversao", "ticket_medio", "nps"],
+  "s-oploja": ["conversao", "ticket_medio"],
+  "s-provadores": ["nps"],
+  "s-reserva": ["pecas_hora"],
+  "s-picking": ["pecas_hora", "sla_no_prazo"],
+  "s-sfs": ["pecas_hora", "sla_no_prazo"],
+  "s-pd": ["sla_no_prazo"],
+  "s-vm": ["execucao_planograma"],
+  "s-vmo": ["execucao_planograma"],
+};
+
+/** Faixa [minimo, maximo] da base individual de cada indicador. */
+const BASE_INDICADOR: Record<TipoIndicador, [number, number]> = {
+  pecas_hora: [55, 75],
+  conversao: [22, 30],
+  ticket_medio: [95, 135],
+  nps: [60, 85],
+  sla_no_prazo: [88, 98],
+  execucao_planograma: [85, 98],
+};
+
+/** Lideranca nao tem indicador individual; a leitura dela e agregada. */
+const CARGOS_COM_INDICADOR = ["c-caixa", "c-oploja", "c-vm", "c-evm"];
+
+function competenciaMesesAtras(meses: number): string {
+  const hoje = new Date();
+  return formatarIsoLocal(
+    new Date(hoje.getFullYear(), hoje.getMonth() - meses, 1),
+  ).slice(0, 7);
+}
+
+function somarDiasIso(iso: string, dias: number): string {
+  const data = new Date(`${iso}T00:00:00`);
+  data.setDate(data.getDate() + dias);
+  return formatarIsoLocal(data);
+}
+
+/**
+ * Seis competencias fechadas de indicadores por pessoa. A geracao respeita o
+ * periodo de casa de cada um (admitidos recentes tem historico curto;
+ * desligados, historico parcial) e repete os rastros da narrativa: o Caixa da
+ * tarde rende menos, e o Leandro — que saiu por salario acumulando faltas —
+ * vinha derretendo a producao nos ultimos meses.
+ */
+function gerarIndicadores(): IndicadorMensal[] {
+  const indicadores: IndicadorMensal[] = [];
+  let sequencia = 0;
+
+  const competencias: string[] = [];
+  for (let n = 6; n >= 1; n -= 1) competencias.push(competenciaMesesAtras(n));
+
+  // Queda progressiva do Leandro nas tres competencias antes da saida.
+  const quedaLeandro = new Map([
+    [competenciaMesesAtras(3), 0.95],
+    [competenciaMesesAtras(2), 0.88],
+    [competenciaMesesAtras(1), 0.8],
+  ]);
+
+  for (const colaborador of colaboradoresIniciais) {
+    if (!colaborador.cargo_id || !CARGOS_COM_INDICADOR.includes(colaborador.cargo_id)) {
+      continue;
+    }
+    const tipos = colaborador.setor_id
+      ? INDICADORES_POR_SETOR[colaborador.setor_id]
+      : undefined;
+    if (!tipos || !colaborador.data_admissao) continue;
+
+    const caixaTarde =
+      colaborador.setor_id === "s-caixa" && colaborador.turno === "tarde";
+    const veteranoEm = somarDiasIso(colaborador.data_admissao, 90);
+
+    for (const tipo of tipos) {
+      const [minimo, maximo] = BASE_INDICADOR[tipo];
+      const base = minimo + aleatorio() * (maximo - minimo);
+      const casas = INDICADORES[tipo].casas;
+      const escala = 10 ** casas;
+
+      for (const competencia of competencias) {
+        // So gera para os meses em que a pessoa estava na casa.
+        if (colaborador.data_admissao > `${competencia}-31`) continue;
+        if (
+          colaborador.data_desligamento &&
+          colaborador.data_desligamento < `${competencia}-01`
+        ) {
+          continue;
+        }
+
+        let fator = 1;
+        if (caixaTarde) fator *= 0.85;
+        if (veteranoEm > `${competencia}-28`) fator *= 0.88;
+        if (colaborador.id === "p-ex-leandro") {
+          fator *= quedaLeandro.get(competencia) ?? 1;
+        }
+
+        const bruto = base * fator * (1 + (aleatorio() - 0.5) * 0.12);
+        sequencia += 1;
+        indicadores.push({
+          id: `im-seed-${sequencia}`,
+          colaborador_id: colaborador.id,
+          competencia,
+          tipo,
+          valor: Math.round(bruto * escala) / escala,
+        });
+      }
+    }
+  }
+
+  return indicadores;
+}
+
+const indicadoresIniciais: IndicadorMensal[] = gerarIndicadores();
+
+/**
+ * Avaliacoes do ultimo ciclo semestral fechado. O mapa fixa as posicoes que
+ * sustentam a narrativa (Luana estrela e sucessora natural; Diana, do Caixa
+ * da tarde, em questionavel — a pagina nunca afirma a causa); o restante do
+ * quadro gravita o centro da matriz. Admitidos ha menos de 90 dias ficam de
+ * fora do ciclo.
+ */
+const AVALIACOES_NARRATIVA: Record<string, [NotaAvaliacao, NotaAvaliacao]> = {
+  "p-luana": [3, 3],
+  "p-alef": [3, 1],
+  "p-rute": [3, 2],
+  "p-savana": [2, 3],
+  "p-ester": [2, 3],
+  "p-diana": [1, 2],
+  "p-kimbelly": [2, 2],
+  "p-antonio": [2, 1],
+};
+
+// Sem [3, 3] aqui de proposito: a Estrela sai apenas do mapa narrativo.
+const NOTAS_COMUNS: readonly [NotaAvaliacao, NotaAvaliacao][] = [
+  [2, 2],
+  [2, 2],
+  [2, 2],
+  [3, 2],
+  [2, 1],
+  [2, 3],
+  [1, 1],
+];
+
+function cicloFechadoMaisRecente(): string {
+  const hoje = new Date();
+  return hoje.getMonth() < 6
+    ? `${hoje.getFullYear() - 1}-S2`
+    : `${hoje.getFullYear()}-S1`;
+}
+
+function gerarAvaliacoes(): Avaliacao[] {
+  const avaliacoes: Avaliacao[] = [];
+  const ciclo = cicloFechadoMaisRecente();
+  const corteAdmissao = diasAtrasIso(90);
+  let sequencia = 0;
+
+  for (const colaborador of colaboradoresIniciais) {
+    if (colaborador.status === "desligado") continue;
+    if (!colaborador.data_admissao || colaborador.data_admissao > corteAdmissao) {
+      continue;
+    }
+
+    const [performance, potencial] =
+      AVALIACOES_NARRATIVA[colaborador.id] ?? escolher(NOTAS_COMUNS);
+    sequencia += 1;
+    avaliacoes.push({
+      id: `av-seed-${sequencia}`,
+      colaborador_id: colaborador.id,
+      ciclo,
+      performance,
+      potencial,
+    });
+  }
+
+  return avaliacoes;
+}
+
+const avaliacoesIniciais: Avaliacao[] = gerarAvaliacoes();
+
 interface EstadoDemo {
   setores: Setor[];
   cargos: Cargo[];
@@ -641,15 +833,17 @@ interface EstadoDemo {
   afastamentos: Afastamento[];
   vagas: Vaga[];
   vagaEventos: VagaEvento[];
+  indicadores: IndicadorMensal[];
+  avaliacoes: Avaliacao[];
 }
 
 // A chave versionada descarta estados de formatos antigos que sobrevivem no
 // globalThis durante o desenvolvimento.
 const escopoGlobal = globalThis as typeof globalThis & {
-  __estadoDemoV5?: EstadoDemo;
+  __estadoDemoV6?: EstadoDemo;
 };
 
-const estado: EstadoDemo = (escopoGlobal.__estadoDemoV5 ??= {
+const estado: EstadoDemo = (escopoGlobal.__estadoDemoV6 ??= {
   setores: setoresIniciais,
   cargos: cargosIniciais,
   colaboradores: colaboradoresIniciais,
@@ -657,6 +851,8 @@ const estado: EstadoDemo = (escopoGlobal.__estadoDemoV5 ??= {
   afastamentos: afastamentosIniciais,
   vagas: vagasIniciais,
   vagaEventos: vagaEventosIniciais,
+  indicadores: indicadoresIniciais,
+  avaliacoes: avaliacoesIniciais,
 });
 
 export const setoresDemo = estado.setores;
@@ -666,3 +862,5 @@ export const ocorrenciasDemo = estado.ocorrencias;
 export const afastamentosDemo = estado.afastamentos;
 export const vagasDemo = estado.vagas;
 export const vagaEventosDemo = estado.vagaEventos;
+export const indicadoresDemo = estado.indicadores;
+export const avaliacoesDemo = estado.avaliacoes;

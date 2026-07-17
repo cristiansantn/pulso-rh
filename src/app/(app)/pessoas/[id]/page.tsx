@@ -9,15 +9,26 @@ import {
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { registrarRetorno } from "@/app/(app)/frequencia/actions";
+import {
+  formatarCompetencia,
+  formatarValorIndicador,
+  media,
+  quadrante,
+} from "@/lib/analytics/performance";
 import { buscarColaborador } from "@/lib/data/colaboradores";
 import { listarAfastamentos, listarOcorrencias } from "@/lib/data/frequencia";
+import { listarAvaliacoes, listarIndicadoresMensais } from "@/lib/data/performance";
 import {
   CATEGORIAS_AFASTAMENTO,
+  INDICADORES,
   MOTIVOS_DESLIGAMENTO,
+  NOTAS_PERFORMANCE,
+  NOTAS_POTENCIAL,
   TIPOS_AFASTAMENTO,
   TIPOS_DESLIGAMENTO,
   TIPOS_OCORRENCIA,
   TURNOS,
+  type TipoIndicador,
 } from "@/lib/data/tipos";
 
 function formatarData(iso: string | null): string {
@@ -68,15 +79,36 @@ export default async function FichaColaboradorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [colaborador, ocorrencias, afastamentos] = await Promise.all([
-    buscarColaborador(id),
-    listarOcorrencias({ colaboradorId: id }),
-    listarAfastamentos({ colaboradorId: id }),
-  ]);
+  const [colaborador, ocorrencias, afastamentos, indicadores, avaliacoes] =
+    await Promise.all([
+      buscarColaborador(id),
+      listarOcorrencias({ colaboradorId: id }),
+      listarAfastamentos({ colaboradorId: id }),
+      listarIndicadoresMensais({ colaboradorId: id }),
+      listarAvaliacoes({ colaboradorId: id }),
+    ]);
 
   if (!colaborador) {
     notFound();
   }
+
+  // Indicadores da pessoa: ultimo lancamento e media do historico por tipo.
+  const tiposDaPessoa = (Object.keys(INDICADORES) as TipoIndicador[])
+    .map((tipo) => {
+      const registros = indicadores.filter((i) => i.tipo === tipo);
+      return registros.length > 0
+        ? {
+            tipo,
+            ultimo: registros[0],
+            mediaHistorico: media(registros.map((r) => r.valor)),
+            competencias: registros.length,
+          }
+        : null;
+    })
+    .filter((resumo) => resumo !== null);
+
+  // A consulta vem ordenada do ciclo mais recente para o mais antigo.
+  const avaliacaoRecente = avaliacoes[0];
 
   // Historico unificado de frequencia, mais recente primeiro.
   const historico = [
@@ -177,6 +209,51 @@ export default async function FichaColaboradorPage({
             valor={colaborador.turno ? TURNOS[colaborador.turno] : null}
           />
         </Secao>
+
+        {(tiposDaPessoa.length > 0 || avaliacaoRecente) && (
+          <section className="rounded-lg border border-line bg-panel p-6">
+            <h2 className="text-sm font-semibold">Performance</h2>
+            <p className="mt-0.5 text-xs text-ink-muted">
+              Indicadores lançados por competência e avaliação do ciclo mais
+              recente. Lançamento externo nesta fase.
+            </p>
+            {avaliacaoRecente && (
+              <p className="mt-3 text-sm">
+                <span className="font-medium">
+                  Ciclo {avaliacaoRecente.ciclo}: {quadrante(avaliacaoRecente).rotulo}
+                </span>
+                <span className="text-ink-soft">
+                  {" "}
+                  · Performance: {NOTAS_PERFORMANCE[avaliacaoRecente.performance]} ·
+                  Potencial: {NOTAS_POTENCIAL[avaliacaoRecente.potencial]}
+                </span>
+              </p>
+            )}
+            {tiposDaPessoa.length > 0 && (
+              <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {tiposDaPessoa.map((resumo) => (
+                  <div key={resumo.tipo}>
+                    <dt className="text-xs text-ink-muted">
+                      {INDICADORES[resumo.tipo].rotulo}
+                    </dt>
+                    <dd className="mt-0.5 text-sm">
+                      {formatarValorIndicador(resumo.tipo, resumo.ultimo.valor)}
+                      <span className="text-ink-muted">
+                        {" "}
+                        · {formatarCompetencia(resumo.ultimo.competencia)}
+                      </span>
+                    </dd>
+                    <dd className="mt-0.5 text-xs text-ink-muted">
+                      Média em {resumo.competencias}{" "}
+                      {resumo.competencias === 1 ? "competência" : "competências"}:{" "}
+                      {formatarValorIndicador(resumo.tipo, resumo.mediaHistorico)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </section>
+        )}
 
         {historico.length > 0 && (
           <section className="rounded-lg border border-line bg-panel p-6">
