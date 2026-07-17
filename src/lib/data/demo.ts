@@ -314,6 +314,53 @@ const colaboradoresIniciais: Colaborador[] = [
   }),
 ];
 
+/**
+ * Ex-associados FICTICIOS (nomes inventados, sem relacao com o quadro real)
+ * para o modulo de turnover ter historico. Datas relativas a hoje, espalhadas
+ * pelos ultimos 12 meses, com mix de motivo, tipo e tempo de casa — inclui
+ * saidas precoces (menos de 90 dias) para o indicador ter relevo.
+ */
+function desligado(
+  id: string,
+  matricula: string,
+  nome: string,
+  setor_id: string,
+  cargo_id: string,
+  gestor_id: string,
+  genero: string,
+  admissaoDiasAtras: number,
+  desligamentoDiasAtras: number,
+  tipo: "voluntario" | "involuntario",
+  motivo: string,
+  turno: Turno = "manha",
+): Colaborador {
+  return pessoa(id, matricula, nome, setor_id, cargo_id, gestor_id, {
+    genero,
+    turno,
+    status: "desligado",
+    data_admissao: diasAtrasIso(admissaoDiasAtras),
+    data_desligamento: diasAtrasIso(desligamentoDiasAtras),
+    tipo_desligamento: tipo,
+    motivo_desligamento: motivo,
+  });
+}
+
+const desligadosIniciais: Colaborador[] = [
+  desligado("p-ex-vanessa", "2901", "Vanessa", "s-caixa", "c-caixa", "p-kimbelly", "Feminino", 400, 300, "voluntario", "escala", "tarde"),
+  desligado("p-ex-juliana", "2902", "Juliana", "s-pd", "c-oploja", "p-luana", "Feminino", 600, 330, "voluntario", "salario"),
+  desligado("p-ex-igor", "2903", "Igor", "s-oploja", "c-oploja", "p-rute", "Masculino", 700, 250, "voluntario", "salario"),
+  desligado("p-ex-priscila", "2904", "Priscila", "s-caixa", "c-caixa", "p-kimbelly", "Feminino", 320, 280, "voluntario", "adaptacao"),
+  desligado("p-ex-douglas", "2905", "Douglas", "s-vm", "c-vm", "p-paola", "Masculino", 900, 200, "involuntario", "desempenho", "tarde"),
+  desligado("p-ex-taina", "2906", "Tainá", "s-sfs", "c-oploja", "p-luana", "Feminino", 260, 180, "voluntario", "nova_oportunidade"),
+  desligado("p-ex-roberto", "2907", "Roberto", "s-vmo", "c-vm", "p-edy", "Masculino", 1100, 150, "voluntario", "distancia", "noite"),
+  desligado("p-ex-camila", "2908", "Camila", "s-oploja", "c-oploja", "p-rute", "Feminino", 500, 120, "voluntario", "escala", "tarde"),
+  desligado("p-ex-felipe", "2909", "Felipe", "s-caixa", "c-caixa", "p-kimbelly", "Masculino", 150, 90, "involuntario", "desempenho"),
+  desligado("p-ex-simone", "2910", "Simone", "s-provadores", "c-oploja", "p-rute", "Feminino", 800, 60, "voluntario", "carreira"),
+  desligado("p-ex-leandro", "2911", "Leandro", "s-reserva", "c-oploja", "p-luana", "Masculino", 420, 30, "voluntario", "escala"),
+];
+
+colaboradoresIniciais.push(...desligadosIniciais);
+
 // Resolve o nome do gestor depois que a lista inteira existe.
 for (const colaborador of colaboradoresIniciais) {
   if (colaborador.gestor_id) {
@@ -554,10 +601,10 @@ interface EstadoDemo {
 // A chave versionada descarta estados de formatos antigos que sobrevivem no
 // globalThis durante o desenvolvimento.
 const escopoGlobal = globalThis as typeof globalThis & {
-  __estadoDemoV3?: EstadoDemo;
+  __estadoDemoV4?: EstadoDemo;
 };
 
-const estado: EstadoDemo = (escopoGlobal.__estadoDemoV3 ??= {
+const estado: EstadoDemo = (escopoGlobal.__estadoDemoV4 ??= {
   setores: setoresIniciais,
   cargos: cargosIniciais,
   colaboradores: colaboradoresIniciais,

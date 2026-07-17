@@ -50,7 +50,7 @@ const SECOES: SecaoNav[] = [
       { href: "/performance", rotulo: "Performance", icone: ChartLineUp, emBreve: true },
       { href: "/perfis", rotulo: "Perfis & Competências", icone: UserFocus, emBreve: true },
       { href: "/talentos", rotulo: "Talentos & Sucessão", icone: Medal, emBreve: true },
-      { href: "/turnover", rotulo: "Turnover", icone: Swap, emBreve: true },
+      { href: "/turnover", rotulo: "Turnover", icone: Swap },
       { href: "/absenteismo", rotulo: "Absenteísmo", icone: Pulse },
       { href: "/analytics", rotulo: "People Analytics", icone: ChartScatter, emBreve: true },
       { href: "/alertas", rotulo: "Alertas", icone: WarningCircle, emBreve: true },

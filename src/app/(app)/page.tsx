@@ -8,6 +8,7 @@ import {
   type Periodo,
 } from "@/lib/analytics/absenteismo";
 import { vagaEmAtraso } from "@/lib/analytics/recrutamento";
+import { desligadosDesde, indiceDeSaida } from "@/lib/analytics/turnover";
 import { listarColaboradores } from "@/lib/data/colaboradores";
 import { listarAfastamentos, listarOcorrencias } from "@/lib/data/frequencia";
 import { listarSetores } from "@/lib/data/setores";
@@ -54,6 +55,9 @@ export default async function VisaoGeralPage() {
   const vagasAbertas = vagas.filter((v) => v.status === "aberta");
   const vagasEmAtraso = vagasAbertas.filter(vagaEmAtraso).length;
 
+  const desligados12m = desligadosDesde(colaboradores, diasAtrasIso(365));
+  const indiceSaida12m = indiceDeSaida(desligados12m.length, quadroAtual.length);
+
   const ocupacaoPorSetor = setores.map((setor) => {
     const equipe = colaboradores.filter(
       (c) => c.setor_id === setor.id && c.status !== "desligado",
@@ -82,7 +86,15 @@ export default async function VisaoGeralPage() {
         <KpiCard rotulo="Afastados" valor={String(afastados)} />
         <KpiCard rotulo="Em férias" valor={String(ferias)} />
         <KpiCard rotulo="Setores" valor={String(setores.length)} />
-        <KpiCard rotulo="Turnover" valor="—" detalhe="Disponível na Fase 5" pendente />
+        <KpiCard
+          rotulo="Índice de saída"
+          valor={
+            indiceSaida12m !== null
+              ? `${indiceSaida12m.toFixed(1).replace(".", ",")}%`
+              : "—"
+          }
+          detalhe="Últimos 12 meses, sobre o quadro atual"
+        />
         <KpiCard
           rotulo="Absenteísmo"
           valor={formatarTaxa(taxaAbsenteismoGeral)}

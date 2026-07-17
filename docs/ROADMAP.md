@@ -15,7 +15,8 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 - [x] Autenticacao (Supabase Auth) com modo demonstracao para desenvolvimento
 - [x] Layout base: sidebar de navegacao, estrutura de paginas
 - [x] Schema inicial do banco (setores, cargos, colaboradores)
-- [ ] Deploy inicial na Vercel + projeto Supabase configurado
+- [x] Deploy inicial na Vercel (pulso-rh.vercel.app, deploy automatico via GitHub);
+      projeto Supabase ainda pendente — em producao roda o modo demonstracao
 
 ## Fase 1 — Pessoas (Cadastro 360)
 
@@ -56,10 +57,12 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 
 ## Fase 5 — Turnover Intelligence
 
-- [ ] Registro de desligamentos com motivo declarado
-- [ ] Turnover geral, voluntario e involuntario
-- [ ] Cortes: setor, gestor, turno, cargo, tempo de empresa, faixa etaria
-- [ ] Turnover precoce (30/90/180 dias)
+- [x] Registro de desligamentos com motivo declarado (fluxo da Fase 1)
+- [x] Indice de saida geral, voluntario e involuntario, com serie mensal
+      (rotulado como aproximacao sobre o quadro atual; turnover anualizado por
+      headcount medio entra quando houver historico mensal de quadro)
+- [x] Cortes: setor, gestor, turno, motivo, tempo de empresa, faixa etaria
+- [x] Turnover precoce (30/90/180 dias)
 
 ## Fase 6 — Performance e Produtividade
 
