@@ -93,6 +93,13 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 - [ ] Central de insights: pergunta + evidencia + hipotese + acao sugerida
 - [ ] People Health Score geral e por setor
 - [ ] Relatorios exportaveis
+      
+## Fase 11 — Ajustes
+
+- [ ] Ferias: Supervisores tem o seu proprio login, onde tem acesso a todos os seus associados, devem obrigatoriamente sinalizarem os dias refente as férias de cada um. Em um segundo tempo o mesmo aparece no portal do Gerente, onde é feita a aprovação ou rejeição. Em caso de aprovação a back é sinalizada, em caso de rejeição o supervisor é sinalizado.
+- [ ] Atestados: Supervisores através do seu login devem registrar todos os atestados dos seus respectivos associados, preenchendo os campos obrigatorios, em casa de atestado digital anexar o arquivo correspondente.
+- [ ] Período crítico: Automaticamente o sistema deve avisar se o associado está em periodo critico ou não.
+- [ ] Contratação: Deve ser sinalizado se a cadeira do associado já foi utilizada para uma segunda contração ou não.
 
 ## Diretrizes permanentes
 
