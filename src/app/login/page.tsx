@@ -90,7 +90,7 @@ export default async function LoginPage({
             alt=""
             fill
             priority
-            quality={100}
+            quality={90}
             sizes="(min-width: 1024px) 56vw, 100vw"
             className="object-cover object-top"
           />

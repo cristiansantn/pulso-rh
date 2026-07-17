@@ -8,11 +8,10 @@ const nextConfig: NextConfig = {
   },
   images: {
     // No Next 16 o padrao aceita apenas quality 75 e coage silenciosamente
-    // qualquer outro valor para ele. A foto do login e reencodada pelo
-    // otimizador em cima de um arquivo ja comprimido; sem liberar 100 aqui,
-    // o quality={100} da pagina nao teria efeito e a dupla compressao
-    // degradaria a imagem.
-    qualities: [75, 100],
+    // qualquer outro valor para ele — sem liberar 90 aqui, a foto do login
+    // seria reencodada a 75 em cima de um arquivo ja comprimido e perderia
+    // definicao. Em webp, 90 e indistinguivel de 100 e pesa um terco.
+    qualities: [75, 90],
   },
 };
 
