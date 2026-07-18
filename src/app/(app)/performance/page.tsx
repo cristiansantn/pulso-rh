@@ -31,6 +31,25 @@ const SELECT_FILTRO =
   "rounded-md border border-line bg-panel px-3 py-2 text-sm text-ink-soft " +
   "focus:border-line-strong focus:outline-none focus:ring-2 focus:ring-line";
 
+const CATALOGO = Object.keys(INDICADORES) as TipoIndicador[];
+
+/** Nomes de setor do catalogo, na ordem em que aparecem, sem repeticao. */
+const SETORES_CATALOGO = [...new Set(CATALOGO.map((t) => INDICADORES[t].setor))];
+
+function variacaoPercentual(
+  atual: number | null | undefined,
+  anterior: number | null | undefined,
+): number | null {
+  if (atual == null || anterior == null || anterior <= 0) return null;
+  return ((atual - anterior) / anterior) * 100;
+}
+
+function formatarVariacao(variacao: number): string {
+  return `${variacao >= 0 ? "+" : "−"}${Math.abs(variacao)
+    .toFixed(1)
+    .replace(".", ",")}%`;
+}
+
 interface CorteMedia {
   rotulo: string;
   pessoas: number;
@@ -66,10 +85,12 @@ function TabelaCorte({
   titulo,
   tipo,
   cortes,
+  colunaPessoas = true,
 }: {
   titulo: string;
   tipo: TipoIndicador;
   cortes: CorteMedia[];
+  colunaPessoas?: boolean;
 }) {
   const maior = Math.max(...cortes.map((c) => c.media), 1);
 
@@ -87,7 +108,9 @@ function TabelaCorte({
           <thead>
             <tr className="border-b border-line text-left text-xs text-ink-muted">
               <th className="px-6 py-2.5 font-medium">Grupo</th>
-              <th className="px-6 py-2.5 text-right font-medium">Pessoas</th>
+              {colunaPessoas && (
+                <th className="px-6 py-2.5 text-right font-medium">Pessoas</th>
+              )}
               <th className="w-2/5 px-6 py-2.5 font-medium">Média</th>
             </tr>
           </thead>
@@ -95,7 +118,11 @@ function TabelaCorte({
             {cortes.map((corte) => (
               <tr key={corte.rotulo} className="border-b border-line last:border-0">
                 <td className="px-6 py-2.5 font-medium">{corte.rotulo}</td>
-                <td className="px-6 py-2.5 text-right text-ink-soft">{corte.pessoas}</td>
+                {colunaPessoas && (
+                  <td className="px-6 py-2.5 text-right text-ink-soft">
+                    {corte.pessoas}
+                  </td>
+                )}
                 <td className="px-6 py-2.5">
                   <div className="flex items-center gap-3">
                     <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-soft">
@@ -119,8 +146,9 @@ function TabelaCorte({
 }
 
 /**
- * Performance e produtividade (Fase 6). Cada indicador e comparado apenas com
- * ele mesmo — nao existe nota unica de produtividade — e a matriz 9-box
+ * Performance e produtividade. Cada indicador pertence a um setor — o filtro
+ * de indicador ja carrega o setor, entao nao existe combinacao sem sentido —
+ * e e comparado apenas com ele mesmo. A matriz 9-box e da loja inteira e
  * reflete a avaliacao do gestor, nao os indicadores.
  */
 export default async function PerformancePage({
@@ -129,7 +157,6 @@ export default async function PerformancePage({
   searchParams: Promise<{
     competencia?: string;
     indicador?: string;
-    setor?: string;
     turno?: string;
   }>;
 }) {
@@ -142,70 +169,87 @@ export default async function PerformancePage({
     listarAvaliacoes(),
   ]);
 
-  const setorId = setores.some((s) => s.id === params.setor) ? params.setor : undefined;
   const turno =
     params.turno && params.turno in TURNOS ? (params.turno as Turno) : undefined;
-
-  const doRecorte = (c: Colaborador) =>
-    (!setorId || c.setor_id === setorId) && (!turno || c.turno === turno);
   const pessoaPorId = new Map(colaboradores.map((c) => [c.id, c]));
-  const idsRecorte = new Set(colaboradores.filter(doRecorte).map((c) => c.id));
-  const ativosRecorte = colaboradores.filter(
-    (c) => doRecorte(c) && c.status !== "desligado",
-  );
+  const setorPorNome = new Map(setores.map((s) => [s.nome, s]));
 
-  const indicadoresRecorte = indicadores.filter((i) =>
-    idsRecorte.has(i.colaborador_id),
-  );
-
-  // Competencias e indicador selecionados, com fallback para o que tem dado.
   const competencias = competenciasDisponiveis(indicadores);
   const competencia = competencias.includes(params.competencia ?? "")
     ? (params.competencia as string)
     : competencias[0];
   const competenciaAnterior = competencias[competencias.indexOf(competencia) + 1];
+  const competenciasAsc = [...competencias].reverse();
 
-  const tiposPresentes = (Object.keys(INDICADORES) as TipoIndicador[]).filter(
-    (tipo) => indicadoresRecorte.some((i) => i.tipo === tipo),
-  );
+  // Indicador selecionado: o do filtro; sem filtro, o primeiro com lancamento.
+  const comLancamento = new Set(indicadores.map((i) => i.tipo));
   const indicadorParam =
     params.indicador && params.indicador in INDICADORES
       ? (params.indicador as TipoIndicador)
       : undefined;
   const indicadorSelecionado =
-    indicadorParam && tiposPresentes.includes(indicadorParam)
-      ? indicadorParam
-      : tiposPresentes[0];
+    indicadorParam ?? CATALOGO.find((t) => comLancamento.has(t)) ?? CATALOGO[0];
+  const definicao = INDICADORES[indicadorSelecionado];
 
-  const daCompetencia = indicadoresRecorte.filter(
+  // Pessoas do setor dono de um indicador, ja com o filtro de turno aplicado.
+  const equipeDoSetor = (nomeSetor: string) => {
+    const setor = setorPorNome.get(nomeSetor);
+    if (!setor) return [];
+    return colaboradores.filter(
+      (c) => c.setor_id === setor.id && (!turno || c.turno === turno),
+    );
+  };
+
+  // Lancamentos de um tipo, restritos as pessoas do setor dele.
+  const lancamentosDoTipo = (tipo: TipoIndicador) => {
+    const ids = new Set(equipeDoSetor(INDICADORES[tipo].setor).map((c) => c.id));
+    return indicadores.filter((i) => i.tipo === tipo && ids.has(i.colaborador_id));
+  };
+
+  const registrosSelecionado = lancamentosDoTipo(indicadorSelecionado);
+  const daCompetencia = registrosSelecionado.filter(
     (i) => i.competencia === competencia,
   );
+  const serieSelecionada = serieMensal(
+    registrosSelecionado,
+    indicadorSelecionado,
+    competenciasAsc,
+  );
+  const mediaAtual =
+    serieSelecionada.find((p) => p.competencia === competencia)?.media ?? null;
+  const mediaAnterior = competenciaAnterior
+    ? (serieSelecionada.find((p) => p.competencia === competenciaAnterior)?.media ??
+      null)
+    : null;
+  const variacaoSelecionada = variacaoPercentual(mediaAtual, mediaAnterior);
+
+  const equipeSelecionada = equipeDoSetor(definicao.setor);
+  const quadroSetor = equipeSelecionada.filter((c) => c.status !== "desligado");
   const pessoasMedidas = new Set(daCompetencia.map((i) => i.colaborador_id)).size;
+  const cobertura =
+    quadroSetor.length > 0
+      ? Math.round((pessoasMedidas / quadroSetor.length) * 100)
+      : null;
 
-  // Avaliacoes do ciclo mais recente dentro do recorte.
+  // Matriz 9-box: loja inteira, ciclo mais recente. Independe do filtro.
   const ciclo = cicloMaisRecente(avaliacoes);
-  const avaliacoesCiclo = avaliacoes.filter(
-    (a) => a.ciclo === ciclo && idsRecorte.has(a.colaborador_id),
-  );
+  const avaliacoesCiclo = avaliacoes.filter((a) => a.ciclo === ciclo);
   const avaliadoPorId = new Map(avaliacoesCiclo.map((a) => [a.colaborador_id, a]));
-  const naoAvaliados = ativosRecorte.filter((c) => !avaliadoPorId.has(c.id)).length;
+  const ativosLoja = colaboradores.filter((c) => c.status !== "desligado");
+  const naoAvaliados = ativosLoja.filter((c) => !avaliadoPorId.has(c.id)).length;
 
-  const competenciasAsc = [...competencias].reverse();
-  const filtroAtivo = Boolean(
-    params.competencia || params.indicador || params.setor || params.turno,
+  const filtroAtivo = Boolean(params.competencia || params.indicador || params.turno);
+
+  // Linhas por pessoa: quadro do setor do indicador, com lancamento ou avaliacao.
+  const idsSetor = new Set(equipeSelecionada.map((c) => c.id));
+  const daCompetenciaSetor = indicadores.filter(
+    (i) => i.competencia === competencia && idsSetor.has(i.colaborador_id),
   );
-
-  const registrosDoCorte = indicadorSelecionado
-    ? daCompetencia.filter((i) => i.tipo === indicadorSelecionado)
-    : [];
-  const setorPorId = new Map(setores.map((s) => [s.id, s.nome]));
-
-  // Linhas da tabela por pessoa: quem tem lancamento na competencia ou avaliacao.
   const linhasPessoas = colaboradores
     .filter(
       (c) =>
-        idsRecorte.has(c.id) &&
-        (daCompetencia.some((i) => i.colaborador_id === c.id) ||
+        idsSetor.has(c.id) &&
+        (daCompetenciaSetor.some((i) => i.colaborador_id === c.id) ||
           avaliadoPorId.has(c.id)),
     )
     .sort((a, b) => a.nome.localeCompare(b.nome));
@@ -219,11 +263,19 @@ export default async function PerformancePage({
     nomesPorQuadrante.set(chave, nomes);
   }
 
+  const hrefIndicador = (tipo: TipoIndicador) => {
+    const query = new URLSearchParams();
+    if (competencia) query.set("competencia", competencia);
+    query.set("indicador", tipo);
+    if (turno) query.set("turno", turno);
+    return `/performance?${query.toString()}`;
+  };
+
   return (
     <>
       <PageHeader
         titulo="Performance"
-        descricao="Indicadores operacionais por competência e matriz performance x potencial. Cada indicador é comparado apenas com ele mesmo."
+        descricao="Indicadores coletados por setor e matriz performance x potencial. Cada indicador é comparado apenas com ele mesmo."
       >
         <Link
           href="/performance/indicador"
@@ -255,21 +307,19 @@ export default async function PerformancePage({
         </select>
         <select
           name="indicador"
-          defaultValue={indicadorSelecionado ?? ""}
+          defaultValue={indicadorSelecionado}
           className={SELECT_FILTRO}
         >
-          {tiposPresentes.map((tipo) => (
-            <option key={tipo} value={tipo}>
-              {INDICADORES[tipo].rotulo}
-            </option>
-          ))}
-        </select>
-        <select name="setor" defaultValue={setorId ?? ""} className={SELECT_FILTRO}>
-          <option value="">Todos os setores</option>
-          {setores.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nome}
-            </option>
+          {SETORES_CATALOGO.map((nomeSetor) => (
+            <optgroup key={nomeSetor} label={nomeSetor}>
+              {CATALOGO.filter((t) => INDICADORES[t].setor === nomeSetor).map(
+                (tipo) => (
+                  <option key={tipo} value={tipo}>
+                    {INDICADORES[tipo].rotulo}
+                  </option>
+                ),
+              )}
+            </optgroup>
           ))}
         </select>
         <select name="turno" defaultValue={turno ?? ""} className={SELECT_FILTRO}>
@@ -298,22 +348,28 @@ export default async function PerformancePage({
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
-          rotulo="Pessoas medidas"
-          valor={String(pessoasMedidas)}
-          detalhe="Com indicador lançado na competência"
+          rotulo={definicao.rotulo}
+          valor={formatarValorIndicador(indicadorSelecionado, mediaAtual)}
+          detalhe={`Média de ${definicao.setor}${turno ? ` · ${TURNOS[turno]}` : ""}`}
         />
         <KpiCard
-          rotulo="Indicadores acompanhados"
-          valor={String(tiposPresentes.length)}
-          detalhe="Tipos com lançamento no recorte"
-        />
-        <KpiCard
-          rotulo="Avaliados no ciclo"
-          valor={String(avaliacoesCiclo.length)}
+          rotulo="Variação"
+          valor={
+            variacaoSelecionada === null ? "—" : formatarVariacao(variacaoSelecionada)
+          }
           detalhe={
-            ciclo
-              ? `De ${ativosRecorte.length} no quadro · ciclo ${ciclo}`
-              : "Nenhum ciclo de avaliação registrado"
+            competenciaAnterior && variacaoSelecionada !== null
+              ? `vs ${formatarCompetencia(competenciaAnterior)}`
+              : "Sem base de comparação anterior"
+          }
+        />
+        <KpiCard
+          rotulo="Cobertura de coleta"
+          valor={cobertura === null ? "—" : `${cobertura}%`}
+          detalhe={
+            cobertura === null
+              ? "Sem quadro no recorte"
+              : `${pessoasMedidas} de ${quadroSetor.length} do quadro com lançamento`
           }
         />
         <KpiCard
@@ -327,72 +383,79 @@ export default async function PerformancePage({
         />
       </section>
 
-      <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {tiposPresentes.map((tipo) => {
-          const serie = serieMensal(indicadoresRecorte, tipo, competenciasAsc);
-          const atual = serie.find((p) => p.competencia === competencia);
-          const anterior = competenciaAnterior
-            ? serie.find((p) => p.competencia === competenciaAnterior)
-            : undefined;
-          const variacao =
-            atual?.media != null && anterior?.media != null && anterior.media > 0
-              ? ((atual.media - anterior.media) / anterior.media) * 100
-              : null;
-
-          return (
-            <div key={tipo} className="rounded-lg border border-line bg-panel p-4">
-              <p className="text-xs font-medium tracking-wide text-ink-muted uppercase">
-                {INDICADORES[tipo].rotulo}
-              </p>
-              <p className="mt-1.5 text-2xl font-semibold">
-                {formatarValorIndicador(tipo, atual?.media ?? null)}
-              </p>
-              <p className="mt-0.5 text-xs text-ink-muted">
-                {variacao === null || !competenciaAnterior
-                  ? "Sem base de comparação anterior"
-                  : `${variacao >= 0 ? "+" : "−"}${Math.abs(variacao)
-                      .toFixed(1)
-                      .replace(".", ",")}% vs ${formatarCompetencia(competenciaAnterior)}`}
-              </p>
-              <div className="mt-3">
-                <GraficoLinha
-                  pontos={serie.map((ponto) => ({
-                    rotulo: formatarCompetencia(ponto.competencia),
-                    valor: ponto.media,
-                    destaque: ponto.competencia === competencia,
-                  }))}
-                />
-              </div>
-            </div>
-          );
-        })}
-        {tiposPresentes.length === 0 && (
-          <p className="rounded-lg border border-line bg-panel px-6 py-8 text-center text-sm text-ink-muted sm:col-span-2 xl:col-span-3">
-            Nenhum indicador lançado no recorte.
+      <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {competencias.length === 0 ? (
+          <p className="rounded-lg border border-line bg-panel px-6 py-8 text-center text-sm text-ink-muted sm:col-span-2 xl:col-span-4">
+            Nenhum indicador lançado ainda.
           </p>
+        ) : (
+          CATALOGO.map((tipo) => {
+            const serie = serieMensal(lancamentosDoTipo(tipo), tipo, competenciasAsc);
+            const atual = serie.find((p) => p.competencia === competencia);
+            const anterior = competenciaAnterior
+              ? serie.find((p) => p.competencia === competenciaAnterior)
+              : undefined;
+            const variacao = variacaoPercentual(atual?.media, anterior?.media);
+            const selecionado = tipo === indicadorSelecionado;
+
+            return (
+              <Link
+                key={tipo}
+                href={hrefIndicador(tipo)}
+                className={`rounded-lg border bg-panel p-4 transition-colors ${
+                  selecionado
+                    ? "border-brand/50"
+                    : "border-line hover:border-line-strong"
+                }`}
+              >
+                <p className="text-xs font-medium tracking-wide text-ink-muted uppercase">
+                  {INDICADORES[tipo].rotulo}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-muted">
+                  {INDICADORES[tipo].setor}
+                </p>
+                <p className="mt-1.5 text-2xl font-semibold">
+                  {formatarValorIndicador(tipo, atual?.media ?? null)}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-muted">
+                  {variacao === null || !competenciaAnterior
+                    ? "Sem base de comparação anterior"
+                    : `${formatarVariacao(variacao)} vs ${formatarCompetencia(competenciaAnterior)}`}
+                </p>
+                <div className="mt-3">
+                  <GraficoLinha
+                    pontos={serie.map((ponto) => ({
+                      rotulo: formatarCompetencia(ponto.competencia),
+                      valor: ponto.media,
+                      destaque: ponto.competencia === competencia,
+                    }))}
+                  />
+                </div>
+              </Link>
+            );
+          })
         )}
       </section>
 
-      {indicadorSelecionado && competencia && (
+      {competencia && (
         <div className="mt-6 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
           <TabelaCorte
-            titulo={`${INDICADORES[indicadorSelecionado].rotulo} por setor · ${formatarCompetencia(competencia)}`}
+            titulo={`Ranking individual · ${formatarCompetencia(competencia)}`}
             tipo={indicadorSelecionado}
-            cortes={cortePorAtributo(registrosDoCorte, pessoaPorId, (c) =>
-              c.setor_id ? (setorPorId.get(c.setor_id) ?? "Sem setor") : "Sem setor",
-            )}
+            colunaPessoas={false}
+            cortes={cortePorAtributo(daCompetencia, pessoaPorId, (c) => c.nome)}
           />
           <TabelaCorte
-            titulo={`${INDICADORES[indicadorSelecionado].rotulo} por turno · ${formatarCompetencia(competencia)}`}
+            titulo={`${definicao.rotulo} por turno · ${formatarCompetencia(competencia)}`}
             tipo={indicadorSelecionado}
-            cortes={cortePorAtributo(registrosDoCorte, pessoaPorId, (c) =>
+            cortes={cortePorAtributo(daCompetencia, pessoaPorId, (c) =>
               c.turno ? TURNOS[c.turno] : "Sem turno",
             )}
           />
           <TabelaCorte
-            titulo={`${INDICADORES[indicadorSelecionado].rotulo} por gestor · ${formatarCompetencia(competencia)}`}
+            titulo={`${definicao.rotulo} por gestor · ${formatarCompetencia(competencia)}`}
             tipo={indicadorSelecionado}
-            cortes={cortePorAtributo(registrosDoCorte, pessoaPorId, (c) =>
+            cortes={cortePorAtributo(daCompetencia, pessoaPorId, (c) =>
               c.gestor_id
                 ? (pessoaPorId.get(c.gestor_id)?.nome ?? "Sem gestor")
                 : "Sem gestor",
@@ -406,7 +469,7 @@ export default async function PerformancePage({
           <h2 className="text-sm font-semibold">Matriz Performance x Potencial</h2>
           <p className="mt-0.5 text-xs text-ink-muted">
             {ciclo
-              ? `Ciclo ${ciclo} · avaliação do gestor, independente dos indicadores`
+              ? `Loja inteira · ciclo ${ciclo} · avaliação do gestor, independente dos indicadores`
               : "Nenhum ciclo de avaliação registrado"}
           </p>
         </div>
@@ -476,7 +539,7 @@ export default async function PerformancePage({
 
       <section className="mt-6 overflow-hidden rounded-lg border border-line bg-panel">
         <div className="border-b border-line px-6 py-4">
-          <h2 className="text-sm font-semibold">Por pessoa</h2>
+          <h2 className="text-sm font-semibold">Por pessoa · {definicao.setor}</h2>
           <p className="mt-0.5 text-xs text-ink-muted">
             Indicadores da competência {competencia ? formatarCompetencia(competencia) : "—"} e
             posição na matriz.
@@ -486,7 +549,6 @@ export default async function PerformancePage({
           <thead>
             <tr className="border-b border-line text-left text-xs text-ink-muted">
               <th className="px-6 py-2.5 font-medium">Associado</th>
-              <th className="px-6 py-2.5 font-medium">Setor</th>
               <th className="px-6 py-2.5 font-medium">Turno</th>
               <th className="px-6 py-2.5 font-medium">Indicadores na competência</th>
               <th className="px-6 py-2.5 font-medium">Quadrante</th>
@@ -495,13 +557,13 @@ export default async function PerformancePage({
           <tbody>
             {linhasPessoas.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-ink-muted">
+                <td colSpan={4} className="px-6 py-10 text-center text-ink-muted">
                   Nenhuma pessoa com indicador ou avaliação no recorte.
                 </td>
               </tr>
             )}
             {linhasPessoas.map((pessoa) => {
-              const doColaborador = daCompetencia.filter(
+              const doColaborador = daCompetenciaSetor.filter(
                 (i) => i.colaborador_id === pessoa.id,
               );
               const avaliacao = avaliadoPorId.get(pessoa.id);
@@ -515,7 +577,6 @@ export default async function PerformancePage({
                       {pessoa.nome}
                     </Link>
                   </td>
-                  <td className="px-6 py-3 text-ink-soft">{pessoa.setor?.nome ?? "—"}</td>
                   <td className="px-6 py-3 text-ink-soft">
                     {pessoa.turno ? TURNOS[pessoa.turno] : "—"}
                   </td>
@@ -540,9 +601,10 @@ export default async function PerformancePage({
       </section>
 
       <p className="mt-6 text-xs text-ink-muted">
-        Não existe nota única de produtividade: cada indicador é comparável apenas
-        dentro do próprio indicador. A matriz reflete a avaliação do gestor no
-        ciclo, não os indicadores. Os cortes apontam correlações, não causas.
+        Cada indicador pertence ao setor que o coleta e é comparável apenas dentro
+        do próprio indicador — não existe nota única de produtividade. A matriz
+        reflete a avaliação do gestor no ciclo, não os indicadores. Os cortes
+        apontam correlações, não causas.
       </p>
     </>
   );

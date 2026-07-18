@@ -283,15 +283,23 @@ export interface VagaEvento {
 /** Performance e produtividade (Fase 6). */
 
 export type TipoIndicador =
+  | "produtividade_hora"
+  | "pecas_remarcadas_hora"
+  | "conclusao_dia"
   | "pecas_hora"
-  | "conversao"
-  | "ticket_medio"
-  | "nps"
-  | "sla_no_prazo"
-  | "execucao_planograma";
+  | "execucao_setor_dia"
+  | "pay_realizados"
+  | "pcj_realizados"
+  | "seguros_vendidos";
 
 export interface DefinicaoIndicador {
   rotulo: string;
+  /**
+   * Nome do setor dono do indicador. O vinculo e por nome porque os ids
+   * diferem entre o modo demo (slugs) e o Supabase (uuids); o nome e estavel
+   * nos dois. Indicador sem setor valido simplesmente nao aparece nos filtros.
+   */
+  setor: string;
   /** Sufixo de exibicao; vazio quando o formato ja carrega a unidade (R$, %). */
   unidade: string;
   /** Sentido de leitura; hoje todos sao maior_melhor, o campo antecipa futuros. */
@@ -302,51 +310,75 @@ export interface DefinicaoIndicador {
 }
 
 /**
- * Catalogo fechado de indicadores operacionais. Quais indicadores se aplicam
- * a cada grupo nao esta fixado aqui: emerge dos proprios lancamentos.
+ * Catalogo fechado de indicadores operacionais, cada um vinculado ao setor
+ * que o coleta. A lista e curta de proposito: a coleta e manual e poucos
+ * indicadores bem preenchidos valem mais que muitos abandonados. Setores fora
+ * do catalogo ficam sem indicador ate a operacao definir o que medir.
  */
 export const INDICADORES: Record<TipoIndicador, DefinicaoIndicador> = {
-  pecas_hora: {
-    rotulo: "Peças por hora",
+  produtividade_hora: {
+    rotulo: "Produtividade individual",
+    setor: "Ship From Store",
     unidade: "peças/h",
     direcao: "maior_melhor",
     casas: 1,
     formato: "numero",
   },
-  conversao: {
-    rotulo: "Conversão",
+  pecas_remarcadas_hora: {
+    rotulo: "Peças remarcadas por hora",
+    setor: "PD (Precificação Dinâmica)",
+    unidade: "peças/h",
+    direcao: "maior_melhor",
+    casas: 1,
+    formato: "numero",
+  },
+  conclusao_dia: {
+    rotulo: "Conclusão no dia",
+    setor: "PD (Precificação Dinâmica)",
     unidade: "",
     direcao: "maior_melhor",
     casas: 1,
     formato: "percentual",
   },
-  ticket_medio: {
-    rotulo: "Ticket médio",
+  pecas_hora: {
+    rotulo: "Peças por hora",
+    setor: "Picking (Reposição)",
+    unidade: "peças/h",
+    direcao: "maior_melhor",
+    casas: 1,
+    formato: "numero",
+  },
+  execucao_setor_dia: {
+    rotulo: "Execução do setor (dia)",
+    setor: "Picking (Reposição)",
     unidade: "",
     direcao: "maior_melhor",
-    casas: 2,
-    formato: "moeda",
+    casas: 1,
+    formato: "percentual",
   },
-  nps: {
-    rotulo: "NPS",
-    unidade: "pontos",
+  pay_realizados: {
+    rotulo: "Pay realizados",
+    setor: "Caixa",
+    unidade: "",
     direcao: "maior_melhor",
     casas: 0,
     formato: "numero",
   },
-  sla_no_prazo: {
-    rotulo: "SLA no prazo",
+  pcj_realizados: {
+    rotulo: "PCJ realizados",
+    setor: "Caixa",
     unidade: "",
     direcao: "maior_melhor",
-    casas: 1,
-    formato: "percentual",
+    casas: 0,
+    formato: "numero",
   },
-  execucao_planograma: {
-    rotulo: "Execução de planograma",
+  seguros_vendidos: {
+    rotulo: "Seguros vendidos",
+    setor: "Caixa",
     unidade: "",
     direcao: "maior_melhor",
-    casas: 1,
-    formato: "percentual",
+    casas: 0,
+    formato: "numero",
   },
 };
 

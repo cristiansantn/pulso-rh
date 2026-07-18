@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { buscarColaborador } from "@/lib/data/colaboradores";
 import {
   registrarAvaliacao,
   registrarIndicadorMensal,
@@ -45,6 +46,12 @@ export async function lancarIndicador(formData: FormData) {
     valor < 0
   ) {
     redirect("/performance/indicador?erro=obrigatorios");
+  }
+
+  // O indicador pertence a um setor; o lancamento so vale para gente dele.
+  const colaborador = await buscarColaborador(colaboradorId);
+  if (!colaborador || colaborador.setor?.nome !== INDICADORES[tipo].setor) {
+    redirect("/performance/indicador?erro=setor");
   }
 
   await registrarIndicadorMensal({

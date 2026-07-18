@@ -650,34 +650,31 @@ const vagaEventosIniciais: VagaEvento[] = [
  * dos anteriores de proposito — todos consomem a mesma sequencia do PRNG, e
  * inserir chamadas antes deslocaria o quadro inteiro.
  *
- * O mapeamento setor -> indicadores existe apenas aqui, no seed: as paginas
- * derivam "quais indicadores este grupo tem" dos proprios lancamentos.
+ * O mapeamento espelha o catalogo por setor de INDICADORES (tipos.ts): so
+ * Ship From Store, PD, Picking e Caixa coletam indicadores.
  */
 
 const INDICADORES_POR_SETOR: Record<string, TipoIndicador[]> = {
-  "s-caixa": ["conversao", "ticket_medio", "nps"],
-  "s-oploja": ["conversao", "ticket_medio"],
-  "s-provadores": ["nps"],
-  "s-reserva": ["pecas_hora"],
-  "s-picking": ["pecas_hora", "sla_no_prazo"],
-  "s-sfs": ["pecas_hora", "sla_no_prazo"],
-  "s-pd": ["sla_no_prazo"],
-  "s-vm": ["execucao_planograma"],
-  "s-vmo": ["execucao_planograma"],
+  "s-sfs": ["produtividade_hora"],
+  "s-pd": ["pecas_remarcadas_hora", "conclusao_dia"],
+  "s-picking": ["pecas_hora", "execucao_setor_dia"],
+  "s-caixa": ["pay_realizados", "pcj_realizados", "seguros_vendidos"],
 };
 
 /** Faixa [minimo, maximo] da base individual de cada indicador. */
 const BASE_INDICADOR: Record<TipoIndicador, [number, number]> = {
+  produtividade_hora: [55, 75],
+  pecas_remarcadas_hora: [85, 130],
+  conclusao_dia: [88, 100],
   pecas_hora: [55, 75],
-  conversao: [22, 30],
-  ticket_medio: [95, 135],
-  nps: [60, 85],
-  sla_no_prazo: [88, 98],
-  execucao_planograma: [85, 98],
+  execucao_setor_dia: [85, 98],
+  pay_realizados: [8, 20],
+  pcj_realizados: [5, 15],
+  seguros_vendidos: [3, 10],
 };
 
 /** Lideranca nao tem indicador individual; a leitura dela e agregada. */
-const CARGOS_COM_INDICADOR = ["c-caixa", "c-oploja", "c-vm", "c-evm"];
+const CARGOS_COM_INDICADOR = ["c-caixa", "c-oploja"];
 
 function competenciaMesesAtras(meses: number): string {
   const hoje = new Date();
@@ -695,9 +692,8 @@ function somarDiasIso(iso: string, dias: number): string {
 /**
  * Seis competencias fechadas de indicadores por pessoa. A geracao respeita o
  * periodo de casa de cada um (admitidos recentes tem historico curto;
- * desligados, historico parcial) e repete os rastros da narrativa: o Caixa da
- * tarde rende menos, e o Leandro — que saiu por salario acumulando faltas —
- * vinha derretendo a producao nos ultimos meses.
+ * desligados, historico parcial) e repete o rastro da narrativa: o Caixa da
+ * tarde rende menos.
  */
 function gerarIndicadores(): IndicadorMensal[] {
   const indicadores: IndicadorMensal[] = [];
@@ -705,13 +701,6 @@ function gerarIndicadores(): IndicadorMensal[] {
 
   const competencias: string[] = [];
   for (let n = 6; n >= 1; n -= 1) competencias.push(competenciaMesesAtras(n));
-
-  // Queda progressiva do Leandro nas tres competencias antes da saida.
-  const quedaLeandro = new Map([
-    [competenciaMesesAtras(3), 0.95],
-    [competenciaMesesAtras(2), 0.88],
-    [competenciaMesesAtras(1), 0.8],
-  ]);
 
   for (const colaborador of colaboradoresIniciais) {
     if (!colaborador.cargo_id || !CARGOS_COM_INDICADOR.includes(colaborador.cargo_id)) {
@@ -745,18 +734,16 @@ function gerarIndicadores(): IndicadorMensal[] {
         let fator = 1;
         if (caixaTarde) fator *= 0.85;
         if (veteranoEm > `${competencia}-28`) fator *= 0.88;
-        if (colaborador.id === "p-ex-leandro") {
-          fator *= quedaLeandro.get(competencia) ?? 1;
-        }
 
         const bruto = base * fator * (1 + (aleatorio() - 0.5) * 0.12);
+        const teto = INDICADORES[tipo].formato === "percentual" ? 100 : Infinity;
         sequencia += 1;
         indicadores.push({
           id: `im-seed-${sequencia}`,
           colaborador_id: colaborador.id,
           competencia,
           tipo,
-          valor: Math.round(bruto * escala) / escala,
+          valor: Math.min(Math.round(bruto * escala) / escala, teto),
         });
       }
     }
@@ -1045,10 +1032,10 @@ interface EstadoDemo {
 // A chave versionada descarta estados de formatos antigos que sobrevivem no
 // globalThis durante o desenvolvimento.
 const escopoGlobal = globalThis as typeof globalThis & {
-  __estadoDemoV9?: EstadoDemo;
+  __estadoDemoV10?: EstadoDemo;
 };
 
-const estado: EstadoDemo = (escopoGlobal.__estadoDemoV9 ??= {
+const estado: EstadoDemo = (escopoGlobal.__estadoDemoV10 ??= {
   setores: setoresIniciais,
   cargos: cargosIniciais,
   colaboradores: colaboradoresIniciais,
