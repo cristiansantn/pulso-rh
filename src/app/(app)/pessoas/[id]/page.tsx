@@ -232,7 +232,7 @@ export default async function FichaColaboradorPage({
             <h2 className="text-sm font-semibold">Performance</h2>
             <p className="mt-0.5 text-xs text-ink-muted">
               Indicadores lançados por competência e avaliação do ciclo mais
-              recente. Lançamento externo nesta fase.
+              recente.
             </p>
             {avaliacaoRecente && (
               <p className="mt-3 text-sm">
@@ -306,7 +306,15 @@ export default async function FichaColaboradorPage({
 
         {planoSucessao && (
           <section className="rounded-lg border border-line bg-panel p-6">
-            <h2 className="text-sm font-semibold">Talento e sucessão</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold">Talento e sucessão</h2>
+              <Link
+                href={`/talentos/plano?colaborador=${colaborador.id}`}
+                className="text-xs font-medium text-brand transition-colors hover:text-brand-strong"
+              >
+                Editar plano
+              </Link>
+            </div>
             <p className="mt-0.5 text-xs text-ink-muted">
               Plano de sucessão do comitê · revisado em{" "}
               {formatarData(planoSucessao.data_atualizacao)}. Aponta preparação

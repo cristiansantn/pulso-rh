@@ -1,7 +1,12 @@
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { avaliacoesDemo, indicadoresDemo } from "./demo";
-import type { Avaliacao, IndicadorMensal } from "./tipos";
+import type {
+  Avaliacao,
+  IndicadorMensal,
+  NovaAvaliacao,
+  NovoIndicadorMensal,
+} from "./tipos";
 
 /**
  * Repositorio de performance (indicadores mensais e avaliacoes). Somente
@@ -85,4 +90,57 @@ export async function listarAvaliacoes(
     throw new Error(`Falha ao listar avaliações: ${error.message}`);
   }
   return data as Avaliacao[];
+}
+
+/**
+ * Lanca um indicador mensal. E um upsert: relancar a mesma competencia e tipo
+ * para a pessoa substitui o valor anterior (a correcao de um lancamento e
+ * comum). O par unico espelha a constraint do banco.
+ */
+export async function registrarIndicadorMensal(
+  dados: NovoIndicadorMensal,
+): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    const indice = indicadoresDemo.findIndex(
+      (i) =>
+        i.colaborador_id === dados.colaborador_id &&
+        i.competencia === dados.competencia &&
+        i.tipo === dados.tipo,
+    );
+    if (indice >= 0) indicadoresDemo.splice(indice, 1);
+    indicadoresDemo.push({ ...dados, id: `im-${crypto.randomUUID()}` });
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("indicadores_mensais")
+    .upsert(dados, { onConflict: "colaborador_id,competencia,tipo" });
+  if (error) {
+    throw new Error(`Falha ao registrar indicador: ${error.message}`);
+  }
+}
+
+/**
+ * Lanca a avaliacao de um ciclo. Upsert por (colaborador, ciclo): reavaliar o
+ * mesmo ciclo atualiza a posicao na matriz em vez de duplicar.
+ */
+export async function registrarAvaliacao(dados: NovaAvaliacao): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    const indice = avaliacoesDemo.findIndex(
+      (a) =>
+        a.colaborador_id === dados.colaborador_id && a.ciclo === dados.ciclo,
+    );
+    if (indice >= 0) avaliacoesDemo.splice(indice, 1);
+    avaliacoesDemo.push({ ...dados, id: `av-${crypto.randomUUID()}` });
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("avaliacoes")
+    .upsert(dados, { onConflict: "colaborador_id,ciclo" });
+  if (error) {
+    throw new Error(`Falha ao registrar avaliação: ${error.message}`);
+  }
 }

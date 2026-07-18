@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -101,8 +102,16 @@ export default async function TalentosPage() {
     <>
       <PageHeader
         titulo="Talentos e Sucessão"
-        descricao="Banco de sucessores por cargo, prontidão e gaps de competência (PDI). Leitura de cobertura, não ranking de pessoas; nesta fase o registro é externo e o módulo é somente leitura."
-      />
+        descricao="Banco de sucessores por cargo, prontidão e gaps de competência (PDI). Leitura de cobertura, não ranking de pessoas."
+      >
+        <Link
+          href="/talentos/plano"
+          className="flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-ink-soft transition-colors hover:bg-neutral-soft/60"
+        >
+          <Plus size={15} />
+          Novo plano
+        </Link>
+      </PageHeader>
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard

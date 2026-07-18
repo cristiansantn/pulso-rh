@@ -69,14 +69,12 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 - [x] Indicadores por funcao (pecas/hora, conversao, NPS, ticket medio, SLA...)
 - [x] Visao por pessoa, equipe, setor, turno e gestor
 - [x] Matriz Performance x Potencial (9-box)
-      (leitura pela demo/seed; o lancamento de indicadores e avaliacoes pela
-      interface entra em fase posterior)
+- [x] Lancamento de indicadores e avaliacoes pela interface (upsert)
 
 ## Fase 7 — Perfil Comportamental
 
 - [x] Registro de perfis (DISC), separado de performance
-      (leitura pela demo/seed, como na Fase 6; aplicacao do assessment e
-      lancamento pela interface entram em fase posterior)
+      (lancamento pela interface disponivel; cada registro e datado)
 - [x] Perfil predominante e secundario, estilos de comunicacao e decisao
 - [x] Mapa comportamental por equipe (por setor e por gestor direto)
 
@@ -85,8 +83,7 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 - [x] Prontidao por pessoa (pronto agora / 6 meses / 12 meses / nao mapeado)
 - [x] Gaps de competencia e PDI (lista controlada de competencias por sucessor)
 - [x] Banco de sucessores por cargo
-      (leitura pela demo/seed, como nas Fases 6 e 7; manutencao dos planos
-      pela interface entra em fase posterior)
+- [x] Criacao e edicao de planos de sucessao pela interface (upsert por pessoa)
 
 ## Fase 9 — Cockpit e Alertas
 

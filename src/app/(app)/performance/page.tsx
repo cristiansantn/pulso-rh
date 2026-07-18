@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GridNine, Plus } from "@phosphor-icons/react/dist/ssr";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -221,8 +222,23 @@ export default async function PerformancePage({
     <>
       <PageHeader
         titulo="Performance"
-        descricao="Indicadores operacionais por competência e matriz performance x potencial. Nesta fase o lançamento é externo: o módulo é somente leitura."
-      />
+        descricao="Indicadores operacionais por competência e matriz performance x potencial. Cada indicador é comparado apenas com ele mesmo."
+      >
+        <Link
+          href="/performance/indicador"
+          className="flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-ink-soft transition-colors hover:bg-neutral-soft/60"
+        >
+          <Plus size={15} />
+          Lançar indicador
+        </Link>
+        <Link
+          href="/performance/avaliacao"
+          className="flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-ink-soft transition-colors hover:bg-neutral-soft/60"
+        >
+          <GridNine size={15} />
+          Lançar avaliação
+        </Link>
+      </PageHeader>
 
       <form className="mb-4 flex flex-wrap items-center gap-2">
         <select

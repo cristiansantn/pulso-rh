@@ -1,7 +1,7 @@
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { perfisDemo } from "./demo";
-import type { PerfilComportamental } from "./tipos";
+import type { NovoPerfilComportamental, PerfilComportamental } from "./tipos";
 
 /**
  * Repositorio de perfis comportamentais. Somente leitura nesta fase: os
@@ -40,4 +40,24 @@ export async function listarPerfis(
     throw new Error(`Falha ao listar perfis: ${error.message}`);
   }
   return data as PerfilComportamental[];
+}
+
+/**
+ * Registra um perfil comportamental. Cada registro e uma avaliacao datada:
+ * reavaliar gera um novo registro e as leituras usam o mais recente, sem
+ * sobrescrever o historico.
+ */
+export async function registrarPerfil(
+  dados: NovoPerfilComportamental,
+): Promise<void> {
+  if (!isSupabaseConfigured()) {
+    perfisDemo.push({ ...dados, id: `pc-${crypto.randomUUID()}` });
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("perfis_comportamentais").insert(dados);
+  if (error) {
+    throw new Error(`Falha ao registrar perfil: ${error.message}`);
+  }
 }

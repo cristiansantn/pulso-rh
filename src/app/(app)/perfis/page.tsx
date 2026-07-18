@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -179,8 +180,16 @@ export default async function PerfisPage({
     <>
       <PageHeader
         titulo="Perfil Comportamental"
-        descricao="Perfis DISC do quadro e mapa comportamental por equipe. Registro separado de performance; nesta fase a aplicação é externa e o módulo é somente leitura."
-      />
+        descricao="Perfis DISC do quadro e mapa comportamental por equipe. Registro separado de performance: perfil descreve estilo de trabalho, não desempenho."
+      >
+        <Link
+          href="/perfis/registrar"
+          className="flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-ink-soft transition-colors hover:bg-neutral-soft/60"
+        >
+          <Plus size={15} />
+          Registrar perfil
+        </Link>
+      </PageHeader>
 
       <form className="mb-4 flex flex-wrap items-center gap-2">
         <select name="setor" defaultValue={setorId ?? ""} className={SELECT_FILTRO}>
