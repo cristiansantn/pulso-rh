@@ -20,10 +20,13 @@ import { buscarColaborador } from "@/lib/data/colaboradores";
 import { listarPerfis } from "@/lib/data/comportamento";
 import { listarAfastamentos, listarOcorrencias } from "@/lib/data/frequencia";
 import { listarAvaliacoes, listarIndicadoresMensais } from "@/lib/data/performance";
+import { listarPlanosSucessao } from "@/lib/data/talentos";
 import {
   CATEGORIAS_AFASTAMENTO,
+  COMPETENCIAS,
   DISC,
   INDICADORES,
+  PRONTIDAO,
   MOTIVOS_DESLIGAMENTO,
   NOTAS_PERFORMANCE,
   NOTAS_POTENCIAL,
@@ -82,15 +85,23 @@ export default async function FichaColaboradorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [colaborador, ocorrencias, afastamentos, indicadores, avaliacoes, perfis] =
-    await Promise.all([
-      buscarColaborador(id),
-      listarOcorrencias({ colaboradorId: id }),
-      listarAfastamentos({ colaboradorId: id }),
-      listarIndicadoresMensais({ colaboradorId: id }),
-      listarAvaliacoes({ colaboradorId: id }),
-      listarPerfis({ colaboradorId: id }),
-    ]);
+  const [
+    colaborador,
+    ocorrencias,
+    afastamentos,
+    indicadores,
+    avaliacoes,
+    perfis,
+    planos,
+  ] = await Promise.all([
+    buscarColaborador(id),
+    listarOcorrencias({ colaboradorId: id }),
+    listarAfastamentos({ colaboradorId: id }),
+    listarIndicadoresMensais({ colaboradorId: id }),
+    listarAvaliacoes({ colaboradorId: id }),
+    listarPerfis({ colaboradorId: id }),
+    listarPlanosSucessao({ colaboradorId: id }),
+  ]);
 
   if (!colaborador) {
     notFound();
@@ -114,6 +125,7 @@ export default async function FichaColaboradorPage({
   // As consultas vem ordenadas do registro mais recente para o mais antigo.
   const avaliacaoRecente = avaliacoes[0];
   const perfilVigente = perfis[0];
+  const planoSucessao = planos[0];
 
   // Historico unificado de frequencia, mais recente primeiro.
   const historico = [
@@ -287,6 +299,32 @@ export default async function FichaColaboradorPage({
               <Campo
                 rotulo="Decisão"
                 valor={DISC[perfilVigente.fator_primario].decisao}
+              />
+            </dl>
+          </section>
+        )}
+
+        {planoSucessao && (
+          <section className="rounded-lg border border-line bg-panel p-6">
+            <h2 className="text-sm font-semibold">Talento e sucessão</h2>
+            <p className="mt-0.5 text-xs text-ink-muted">
+              Plano de sucessão do comitê · revisado em{" "}
+              {formatarData(planoSucessao.data_atualizacao)}. Aponta preparação
+              para um cargo-alvo, não promessa de promoção.
+            </p>
+            <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <Campo
+                rotulo="Cargo-alvo"
+                valor={planoSucessao.cargo_alvo?.nome ?? null}
+              />
+              <Campo rotulo="Prontidão" valor={PRONTIDAO[planoSucessao.prontidao]} />
+              <Campo
+                rotulo="Gaps de competência (PDI)"
+                valor={
+                  planoSucessao.gaps.length > 0
+                    ? planoSucessao.gaps.map((gap) => COMPETENCIAS[gap]).join(", ")
+                    : "Sem gaps registrados"
+                }
               />
             </dl>
           </section>

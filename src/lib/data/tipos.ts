@@ -451,3 +451,59 @@ export interface PerfilComportamental {
 }
 
 export type NovoPerfilComportamental = Omit<PerfilComportamental, "id">;
+
+/** Talentos e sucessao (Fase 8). */
+
+/** Prontidao para assumir o cargo-alvo. "Nao mapeado" e a ausencia de plano. */
+export type Prontidao = "pronto" | "6_meses" | "12_meses";
+
+export const PRONTIDAO: Record<Prontidao, string> = {
+  pronto: "Pronto agora",
+  "6_meses": "Pronto em 6 meses",
+  "12_meses": "Pronto em 12 meses",
+};
+
+/**
+ * Catalogo fechado de competencias. Um gap e uma competencia a desenvolver;
+ * o conjunto de gaps de uma pessoa forma o foco do PDI. Lista controlada,
+ * nunca texto livre — texto livre impede a leitura agregada dos gaps.
+ */
+export type Competencia =
+  | "lideranca"
+  | "gestao_pessoas"
+  | "comunicacao"
+  | "planejamento"
+  | "visao_negocio"
+  | "conhecimento_tecnico"
+  | "orientacao_resultado"
+  | "adaptabilidade";
+
+export const COMPETENCIAS: Record<Competencia, string> = {
+  lideranca: "Liderança",
+  gestao_pessoas: "Gestão de pessoas",
+  comunicacao: "Comunicação",
+  planejamento: "Planejamento",
+  visao_negocio: "Visão de negócio",
+  conhecimento_tecnico: "Conhecimento técnico",
+  orientacao_resultado: "Orientação a resultado",
+  adaptabilidade: "Adaptabilidade",
+};
+
+/**
+ * Plano de sucessao de uma pessoa: o cargo para o qual ela e preparada, sua
+ * prontidao e os gaps de competencia que o PDI precisa fechar. Um plano por
+ * pessoa; quem nao tem plano conta como "nao mapeado".
+ */
+export interface PlanoSucessao {
+  id: string;
+  colaborador_id: string;
+  /** Cargo para o qual a pessoa esta sendo preparada. */
+  cargo_alvo_id: string;
+  prontidao: Prontidao;
+  /** Competencias a desenvolver; base do PDI. */
+  gaps: Competencia[];
+  data_atualizacao: string;
+  cargo_alvo: { nome: string } | null;
+}
+
+export type NovoPlanoSucessao = Omit<PlanoSucessao, "id" | "cargo_alvo">;

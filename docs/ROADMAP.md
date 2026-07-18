@@ -82,9 +82,11 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 
 ## Fase 8 — Talentos e Sucessao
 
-- [ ] Prontidao por pessoa (pronto agora / 6 meses / 12 meses / nao mapeado)
-- [ ] Gaps de competencia e PDI
-- [ ] Banco de sucessores por cargo
+- [x] Prontidao por pessoa (pronto agora / 6 meses / 12 meses / nao mapeado)
+- [x] Gaps de competencia e PDI (lista controlada de competencias por sucessor)
+- [x] Banco de sucessores por cargo
+      (leitura pela demo/seed, como nas Fases 6 e 7; manutencao dos planos
+      pela interface entra em fase posterior)
 
 ## Fase 9 — Cockpit e Alertas
 

@@ -5,11 +5,14 @@ import type {
   Avaliacao,
   Cargo,
   Colaborador,
+  Competencia,
   FatorDisc,
   IndicadorMensal,
   NotaAvaliacao,
   Ocorrencia,
   PerfilComportamental,
+  PlanoSucessao,
+  Prontidao,
   Setor,
   TipoIndicador,
   Turno,
@@ -913,6 +916,77 @@ function gerarPerfis(): PerfilComportamental[] {
 
 const perfisIniciais: PerfilComportamental[] = gerarPerfis();
 
+/**
+ * Fase 8: planos de sucessao. Diferente dos geradores anteriores, este e um
+ * mapa fixo — sucessao e uma leitura curada, nao um sorteio: cada plano nasce
+ * de uma posicao especifica na matriz 9-box e aponta um cargo-alvo plausivel.
+ *
+ * A narrativa se sustenta: Luana, unica Estrela, e a sucessora pronta para
+ * Supervisor; os demais formam o banco com prontidao escalonada. O que a tela
+ * NAO anuncia, mas o banco por cargo revela: a lideranca do Caixa nao tem
+ * sucessor mapeado — o mesmo setor que sangra por escala tambem esta sem
+ * banco. Alef, alta performance e baixo potencial (Especialista no 9-box),
+ * fica de fora de proposito: nem todo bom tecnico e candidato a lideranca.
+ */
+const PLANOS_NARRATIVA: {
+  colaborador_id: string;
+  cargo_alvo_id: string;
+  prontidao: Prontidao;
+  gaps: Competencia[];
+}[] = [
+  {
+    colaborador_id: "p-luana",
+    cargo_alvo_id: "c-supervisor",
+    prontidao: "pronto",
+    gaps: ["visao_negocio"],
+  },
+  {
+    colaborador_id: "p-rute",
+    cargo_alvo_id: "c-supervisor",
+    prontidao: "6_meses",
+    gaps: ["planejamento", "visao_negocio"],
+  },
+  {
+    colaborador_id: "p-paola",
+    cargo_alvo_id: "c-supervisor",
+    prontidao: "12_meses",
+    gaps: ["gestao_pessoas", "orientacao_resultado", "visao_negocio"],
+  },
+  {
+    colaborador_id: "p-savana",
+    cargo_alvo_id: "c-lider",
+    prontidao: "6_meses",
+    gaps: ["lideranca", "planejamento"],
+  },
+  {
+    colaborador_id: "p-ester",
+    cargo_alvo_id: "c-lider",
+    prontidao: "12_meses",
+    gaps: ["lideranca", "gestao_pessoas", "conhecimento_tecnico"],
+  },
+  {
+    colaborador_id: "p-matheus",
+    cargo_alvo_id: "c-lider",
+    prontidao: "12_meses",
+    gaps: ["lideranca", "comunicacao", "planejamento"],
+  },
+];
+
+function gerarPlanosSucessao(): PlanoSucessao[] {
+  return PLANOS_NARRATIVA.map((plano, indice) => ({
+    id: `ps-seed-${indice + 1}`,
+    colaborador_id: plano.colaborador_id,
+    cargo_alvo_id: plano.cargo_alvo_id,
+    prontidao: plano.prontidao,
+    gaps: plano.gaps,
+    // Ultima revisao do comite, encerrada ha ~40 dias.
+    data_atualizacao: diasAtrasIso(inteiro(35, 55)),
+    cargo_alvo: nomeCargo(plano.cargo_alvo_id),
+  }));
+}
+
+const planosSucessaoIniciais: PlanoSucessao[] = gerarPlanosSucessao();
+
 interface EstadoDemo {
   setores: Setor[];
   cargos: Cargo[];
@@ -924,15 +998,16 @@ interface EstadoDemo {
   indicadores: IndicadorMensal[];
   avaliacoes: Avaliacao[];
   perfis: PerfilComportamental[];
+  planosSucessao: PlanoSucessao[];
 }
 
 // A chave versionada descarta estados de formatos antigos que sobrevivem no
 // globalThis durante o desenvolvimento.
 const escopoGlobal = globalThis as typeof globalThis & {
-  __estadoDemoV7?: EstadoDemo;
+  __estadoDemoV8?: EstadoDemo;
 };
 
-const estado: EstadoDemo = (escopoGlobal.__estadoDemoV7 ??= {
+const estado: EstadoDemo = (escopoGlobal.__estadoDemoV8 ??= {
   setores: setoresIniciais,
   cargos: cargosIniciais,
   colaboradores: colaboradoresIniciais,
@@ -943,6 +1018,7 @@ const estado: EstadoDemo = (escopoGlobal.__estadoDemoV7 ??= {
   indicadores: indicadoresIniciais,
   avaliacoes: avaliacoesIniciais,
   perfis: perfisIniciais,
+  planosSucessao: planosSucessaoIniciais,
 });
 
 export const setoresDemo = estado.setores;
@@ -955,3 +1031,4 @@ export const vagaEventosDemo = estado.vagaEventos;
 export const indicadoresDemo = estado.indicadores;
 export const avaliacoesDemo = estado.avaliacoes;
 export const perfisDemo = estado.perfis;
+export const planosSucessaoDemo = estado.planosSucessao;
