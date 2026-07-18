@@ -8,6 +8,7 @@ import type {
   Competencia,
   FatorDisc,
   IndicadorMensal,
+  Movimentacao,
   NotaAvaliacao,
   Ocorrencia,
   PerfilComportamental,
@@ -15,6 +16,7 @@ import type {
   Prontidao,
   Setor,
   TipoIndicador,
+  TipoMovimentacao,
   Turno,
   Vaga,
   VagaEvento,
@@ -987,6 +989,44 @@ function gerarPlanosSucessao(): PlanoSucessao[] {
 
 const planosSucessaoIniciais: PlanoSucessao[] = gerarPlanosSucessao();
 
+/**
+ * Fase 1: historico de carreira. Mapa fixo, coerente com o quadro atual — as
+ * promocoes explicam como os lideres e supervisores chegaram ao cargo de hoje,
+ * e as transferencias/mudancas de turno cruzam com a narrativa (Tiago abriu o
+ * Picking; Diana foi para a tarde do Caixa, o turno que depois sangra). Datas
+ * relativas, sempre depois da admissao e antes de hoje.
+ */
+const MOVIMENTACOES_NARRATIVA: {
+  colaborador_id: string;
+  tipo: TipoMovimentacao;
+  diasAtras: number;
+  de: string | null;
+  para: string;
+}[] = [
+  { colaborador_id: "p-carolina", tipo: "promocao", diasAtras: 900, de: "Líder", para: "Supervisor" },
+  { colaborador_id: "p-pamela", tipo: "promocao", diasAtras: 850, de: "Líder", para: "Supervisor" },
+  { colaborador_id: "p-daniela", tipo: "promocao", diasAtras: 820, de: "Líder", para: "Supervisor" },
+  { colaborador_id: "p-luana", tipo: "promocao", diasAtras: 760, de: "Operador de Loja", para: "Líder" },
+  { colaborador_id: "p-kimbelly", tipo: "promocao", diasAtras: 690, de: "Operador de Caixa", para: "Líder" },
+  { colaborador_id: "p-paola", tipo: "promocao", diasAtras: 610, de: "Visual Merchandiser", para: "Líder" },
+  { colaborador_id: "p-edy", tipo: "promocao", diasAtras: 500, de: "Visual Merchandiser", para: "Líder" },
+  { colaborador_id: "p-rute", tipo: "promocao", diasAtras: 540, de: "Operador de Loja", para: "Líder" },
+  { colaborador_id: "p-tiago", tipo: "transferencia", diasAtras: 210, de: "Reserva", para: "Picking (Reposição)" },
+  { colaborador_id: "p-diana", tipo: "mudanca_turno", diasAtras: 250, de: "Manhã", para: "Tarde" },
+  { colaborador_id: "p-sara", tipo: "mudanca_turno", diasAtras: 180, de: "Manhã", para: "Tarde" },
+];
+
+const movimentacoesIniciais: Movimentacao[] = MOVIMENTACOES_NARRATIVA.map(
+  (mov, indice) => ({
+    id: `mov-seed-${indice + 1}`,
+    colaborador_id: mov.colaborador_id,
+    tipo: mov.tipo,
+    data: diasAtrasIso(mov.diasAtras),
+    de: mov.de,
+    para: mov.para,
+  }),
+);
+
 interface EstadoDemo {
   setores: Setor[];
   cargos: Cargo[];
@@ -999,15 +1039,16 @@ interface EstadoDemo {
   avaliacoes: Avaliacao[];
   perfis: PerfilComportamental[];
   planosSucessao: PlanoSucessao[];
+  movimentacoes: Movimentacao[];
 }
 
 // A chave versionada descarta estados de formatos antigos que sobrevivem no
 // globalThis durante o desenvolvimento.
 const escopoGlobal = globalThis as typeof globalThis & {
-  __estadoDemoV8?: EstadoDemo;
+  __estadoDemoV9?: EstadoDemo;
 };
 
-const estado: EstadoDemo = (escopoGlobal.__estadoDemoV8 ??= {
+const estado: EstadoDemo = (escopoGlobal.__estadoDemoV9 ??= {
   setores: setoresIniciais,
   cargos: cargosIniciais,
   colaboradores: colaboradoresIniciais,
@@ -1019,6 +1060,7 @@ const estado: EstadoDemo = (escopoGlobal.__estadoDemoV8 ??= {
   avaliacoes: avaliacoesIniciais,
   perfis: perfisIniciais,
   planosSucessao: planosSucessaoIniciais,
+  movimentacoes: movimentacoesIniciais,
 });
 
 export const setoresDemo = estado.setores;
@@ -1032,3 +1074,4 @@ export const indicadoresDemo = estado.indicadores;
 export const avaliacoesDemo = estado.avaliacoes;
 export const perfisDemo = estado.perfis;
 export const planosSucessaoDemo = estado.planosSucessao;
+export const movimentacoesDemo = estado.movimentacoes;

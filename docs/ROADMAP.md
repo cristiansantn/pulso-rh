@@ -27,7 +27,9 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 - [x] Desligamento com data, tipo e motivo controlado (alimenta o modulo de Turnover)
 - [x] Reativacao / recontratacao de desligados (desfecho do fluxo de admissao da Fase 4;
       o registro do desligamento anterior e limpo ate existir o historico de passagens)
-- [ ] Historico de promocoes e transferencias
+- [x] Historico de promocoes e transferencias
+      (linha do tempo na ficha; registro pela interface — promocao,
+      transferencia de setor e mudanca de turno)
 - [ ] Escolaridade, cursos, certificacoes e idiomas
 - [ ] Importacao em massa (CSV) para carga inicial
 

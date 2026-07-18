@@ -507,3 +507,32 @@ export interface PlanoSucessao {
 }
 
 export type NovoPlanoSucessao = Omit<PlanoSucessao, "id" | "cargo_alvo">;
+
+/** Historico de carreira: promocoes e transferencias (Fase 1). */
+
+export type TipoMovimentacao = "promocao" | "transferencia" | "mudanca_turno";
+
+export const TIPOS_MOVIMENTACAO: Record<TipoMovimentacao, string> = {
+  promocao: "Promoção",
+  transferencia: "Transferência de setor",
+  mudanca_turno: "Mudança de turno",
+};
+
+/**
+ * Um evento na trajetoria da pessoa. Registra a transicao "de -> para" com os
+ * rotulos legiveis do momento (cargo, setor ou turno, conforme o tipo): a
+ * ficha e um historico, entao guardar o texto do estado anterior preserva a
+ * leitura mesmo que o cargo ou setor seja renomeado depois.
+ */
+export interface Movimentacao {
+  id: string;
+  colaborador_id: string;
+  tipo: TipoMovimentacao;
+  data: string;
+  /** Rotulo de origem; nulo quando nao se aplica. */
+  de: string | null;
+  /** Rotulo de destino. */
+  para: string;
+}
+
+export type NovaMovimentacao = Omit<Movimentacao, "id">;

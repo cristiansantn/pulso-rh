@@ -6,14 +6,17 @@ import {
   atualizarColaborador,
   criarColaborador,
 } from "@/lib/data/colaboradores";
+import { registrarMovimentacao } from "@/lib/data/movimentacoes";
 import { buscarVaga, concluirVaga } from "@/lib/data/vagas";
 import { hojeIso } from "@/lib/datas";
 import {
   MOTIVOS_DESLIGAMENTO,
+  TIPOS_MOVIMENTACAO,
   type ColaboradorEditavel,
   type NovoColaborador,
   type StatusColaborador,
   type TipoDesligamento,
+  type TipoMovimentacao,
   type Turno,
 } from "@/lib/data/tipos";
 
@@ -98,6 +101,41 @@ export async function editarColaborador(id: string, formData: FormData) {
   revalidatePath(`/pessoas/${id}`);
   revalidatePath("/");
   redirect(`/pessoas/${id}`);
+}
+
+/**
+ * Registra uma movimentacao de carreira (promocao, transferencia ou mudanca de
+ * turno). E um evento historico: documenta a transicao sem alterar a posicao
+ * atual da pessoa, que continua sendo mantida pela edicao do cadastro.
+ */
+export async function registrarMovimentacaoAction(formData: FormData) {
+  const colaboradorId = texto(formData, "colaborador_id");
+  const tipo = texto(formData, "tipo") as TipoMovimentacao | null;
+  const data = texto(formData, "data");
+  const de = texto(formData, "de");
+  const para = texto(formData, "para");
+
+  if (!colaboradorId) {
+    redirect("/pessoas");
+  }
+  if (!tipo || !(tipo in TIPOS_MOVIMENTACAO) || !data || !para) {
+    redirect(`/pessoas/${colaboradorId}/movimentacao?erro=obrigatorios`);
+  }
+  if (data > hojeIso()) {
+    redirect(`/pessoas/${colaboradorId}/movimentacao?erro=data`);
+  }
+
+  await registrarMovimentacao({
+    colaborador_id: colaboradorId,
+    tipo,
+    data,
+    de,
+    para,
+  });
+
+  revalidatePath(`/pessoas/${colaboradorId}`);
+  revalidatePath("/pessoas");
+  redirect(`/pessoas/${colaboradorId}`);
 }
 
 /**

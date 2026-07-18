@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowUUpLeft,
   PencilSimple,
+  TrendUp,
   UserMinus,
 } from "@phosphor-icons/react/dist/ssr";
 import { PageHeader } from "@/components/ui/page-header";
@@ -19,6 +20,7 @@ import { formatarPerfil } from "@/lib/analytics/comportamento";
 import { buscarColaborador } from "@/lib/data/colaboradores";
 import { listarPerfis } from "@/lib/data/comportamento";
 import { listarAfastamentos, listarOcorrencias } from "@/lib/data/frequencia";
+import { listarMovimentacoes } from "@/lib/data/movimentacoes";
 import { listarAvaliacoes, listarIndicadoresMensais } from "@/lib/data/performance";
 import { listarPlanosSucessao } from "@/lib/data/talentos";
 import {
@@ -27,6 +29,7 @@ import {
   DISC,
   INDICADORES,
   PRONTIDAO,
+  TIPOS_MOVIMENTACAO,
   MOTIVOS_DESLIGAMENTO,
   NOTAS_PERFORMANCE,
   NOTAS_POTENCIAL,
@@ -93,6 +96,7 @@ export default async function FichaColaboradorPage({
     avaliacoes,
     perfis,
     planos,
+    movimentacoes,
   ] = await Promise.all([
     buscarColaborador(id),
     listarOcorrencias({ colaboradorId: id }),
@@ -101,6 +105,7 @@ export default async function FichaColaboradorPage({
     listarAvaliacoes({ colaboradorId: id }),
     listarPerfis({ colaboradorId: id }),
     listarPlanosSucessao({ colaboradorId: id }),
+    listarMovimentacoes({ colaboradorId: id }),
   ]);
 
   if (!colaborador) {
@@ -171,6 +176,15 @@ export default async function FichaColaboradorPage({
             </button>
           </form>
         )}
+        {colaborador.status !== "desligado" && (
+          <Link
+            href={`/pessoas/${colaborador.id}/movimentacao`}
+            className="flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-ink-soft transition-colors hover:bg-neutral-soft/60"
+          >
+            <TrendUp size={15} />
+            Movimentação
+          </Link>
+        )}
         <Link
           href={`/pessoas/${colaborador.id}/editar`}
           className="flex items-center gap-2 rounded-md border border-line px-4 py-2 text-sm text-ink-soft transition-colors hover:bg-neutral-soft/60"
@@ -226,6 +240,58 @@ export default async function FichaColaboradorPage({
             valor={colaborador.turno ? TURNOS[colaborador.turno] : null}
           />
         </Secao>
+
+        {(movimentacoes.length > 0 || colaborador.data_admissao) && (
+          <section className="rounded-lg border border-line bg-panel p-6">
+            <h2 className="text-sm font-semibold">Histórico de carreira</h2>
+            <p className="mt-0.5 text-xs text-ink-muted">
+              Promoções, transferências e mudanças de turno, do mais recente ao
+              mais antigo.
+            </p>
+            <ol className="mt-4 space-y-0">
+              {movimentacoes.map((mov) => (
+                <li key={mov.id} className="flex gap-3 pb-4 last:pb-0">
+                  <div className="flex flex-col items-center">
+                    <span className="mt-1 size-2.5 shrink-0 rounded-full bg-brand" />
+                    <span className="w-px flex-1 bg-line" />
+                  </div>
+                  <div className="pb-1">
+                    <p className="text-sm font-medium">
+                      {TIPOS_MOVIMENTACAO[mov.tipo]}
+                      {mov.para && (
+                        <span className="font-normal text-ink-soft">
+                          {mov.de ? ` · ${mov.de} → ${mov.para}` : ` · ${mov.para}`}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-ink-muted">{formatarData(mov.data)}</p>
+                  </div>
+                </li>
+              ))}
+              {colaborador.data_admissao && (
+                <li className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <span className="mt-1 size-2.5 shrink-0 rounded-full border border-line bg-surface" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">
+                      Admissão
+                      {colaborador.cargo?.nome && (
+                        <span className="font-normal text-ink-soft">
+                          {" "}
+                          · {colaborador.cargo.nome}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-ink-muted">
+                      {formatarData(colaborador.data_admissao)}
+                    </p>
+                  </div>
+                </li>
+              )}
+            </ol>
+          </section>
+        )}
 
         {(tiposDaPessoa.length > 0 || avaliacaoRecente) && (
           <section className="rounded-lg border border-line bg-panel p-6">
