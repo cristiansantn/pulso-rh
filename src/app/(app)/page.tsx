@@ -3,6 +3,7 @@ import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { GraficoColunas } from "@/components/charts/grafico-colunas";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
+import { PeriodoBadge } from "@/components/ui/periodo-badge";
 import {
   formatarTaxa,
   listarDiasPerdidos,
@@ -136,18 +137,6 @@ export default async function VisaoGeralPage() {
   }));
   const maiorFaixa = Math.max(...demografia.map((d) => d.pessoas), 1);
 
-  const ocupacaoPorSetor = setores.map((setor) => {
-    const equipe = colaboradores.filter(
-      (c) => c.setor_id === setor.id && c.status !== "desligado",
-    );
-    return {
-      ...setor,
-      ativos: equipe.filter((c) => c.status === "ativo").length,
-      afastados: equipe.filter((c) => c.status === "afastado").length,
-      ferias: equipe.filter((c) => c.status === "ferias").length,
-    };
-  });
-
   return (
     <>
       <PageHeader
@@ -160,10 +149,11 @@ export default async function VisaoGeralPage() {
           rotulo="Headcount ativo"
           valor={String(ativos)}
           detalhe={`Planejado: ${headcountPlanejado}`}
+          periodo="Atual"
         />
-        <KpiCard rotulo="Afastados" valor={String(afastados)} />
-        <KpiCard rotulo="Em férias" valor={String(ferias)} />
-        <KpiCard rotulo="Setores" valor={String(setores.length)} />
+        <KpiCard rotulo="Afastados" valor={String(afastados)} periodo="Atual" />
+        <KpiCard rotulo="Em férias" valor={String(ferias)} periodo="Atual" />
+        <KpiCard rotulo="Setores" valor={String(setores.length)} periodo="Atual" />
         <KpiCard
           rotulo="Índice de saída"
           valor={
@@ -171,17 +161,20 @@ export default async function VisaoGeralPage() {
               ? `${indiceSaida12m.toFixed(1).replace(".", ",")}%`
               : "—"
           }
-          detalhe="Últimos 12 meses, sobre o quadro atual"
+          detalhe="Sobre o quadro atual"
+          periodo="12 meses"
         />
         <KpiCard
           rotulo="Absenteísmo"
           valor={formatarTaxa(taxaAbsenteismoGeral)}
-          detalhe="Últimos 90 dias"
+          detalhe="Dias perdidos sobre dias úteis"
+          periodo="90 dias"
         />
         <KpiCard
           rotulo="Vagas abertas"
           valor={String(vagasAbertas.length)}
           detalhe={vagasEmAtraso > 0 ? `${vagasEmAtraso} em atraso` : "Nenhuma em atraso"}
+          periodo="Atual"
         />
         <KpiCard
           rotulo="Alertas ativos"
@@ -191,13 +184,17 @@ export default async function VisaoGeralPage() {
               ? `${resumoAlertas.alta} de prioridade alta`
               : "Nenhum de prioridade alta"
           }
+          periodo="Atual"
         />
       </section>
 
       <section className="mt-8 rounded-lg border border-line bg-panel">
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div>
-            <h2 className="text-sm font-semibold">Alertas da operação</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold">Alertas da operação</h2>
+              <PeriodoBadge periodo="Atual" />
+            </div>
             <p className="mt-0.5 text-xs text-ink-muted">
               Desvios em relação à média, às metas e aos limiares.
             </p>
@@ -242,10 +239,15 @@ export default async function VisaoGeralPage() {
 
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-line bg-panel p-6">
-          <h2 className="text-sm font-semibold">Turnover mensal</h2>
-          <p className="mt-0.5 text-xs text-ink-muted">
-            Desligamentos por mês (12 meses), voluntários e involuntários.
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">Turnover mensal</h2>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                Desligamentos por mês, voluntários e involuntários.
+              </p>
+            </div>
+            <PeriodoBadge periodo="12 meses" />
+          </div>
           <div className="mt-4 flex h-40 items-end gap-1.5">
             {serieTurnover.map((mes) => {
               const total = mes.voluntarios + mes.involuntarios;
@@ -284,10 +286,15 @@ export default async function VisaoGeralPage() {
         </div>
 
         <div className="rounded-lg border border-line bg-panel p-6">
-          <h2 className="text-sm font-semibold">Absenteísmo por setor</h2>
-          <p className="mt-0.5 text-xs text-ink-muted">
-            Maiores taxas nos últimos 90 dias.
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">Absenteísmo por setor</h2>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                Maiores taxas por setor.
+              </p>
+            </div>
+            <PeriodoBadge periodo="90 dias" />
+          </div>
           {absenteismoPorSetor.length === 0 ? (
             <p className="mt-6 text-sm text-ink-muted">Sem dias perdidos no período.</p>
           ) : (
@@ -314,11 +321,16 @@ export default async function VisaoGeralPage() {
       </section>
 
       <section className="mt-6 rounded-lg border border-line bg-panel p-6">
-        <h2 className="text-sm font-semibold">Demografia por faixa etária</h2>
-        <p className="mt-0.5 text-xs text-ink-muted">
-          Quadro ativo · {totalComIdade}{" "}
-          {totalComIdade === 1 ? "pessoa com idade informada" : "pessoas com idade informada"}.
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-semibold">Demografia por faixa etária</h2>
+            <p className="mt-0.5 text-xs text-ink-muted">
+              Quadro ativo · {totalComIdade}{" "}
+              {totalComIdade === 1 ? "pessoa com idade informada" : "pessoas com idade informada"}.
+            </p>
+          </div>
+          <PeriodoBadge periodo="Atual" />
+        </div>
         <div className="mt-5">
           <GraficoColunas
             dados={demografia.map((item) => ({
@@ -330,62 +342,6 @@ export default async function VisaoGeralPage() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-lg border border-line bg-panel">
-        <div className="border-b border-line px-6 py-4">
-          <h2 className="text-sm font-semibold">Ocupação por setor</h2>
-          <p className="mt-0.5 text-xs text-ink-muted">
-            Planejado versus quadro atual. As vagas abertas de cada setor estão no
-            mapa da operação.
-          </p>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-line text-left text-xs text-ink-muted">
-              <th className="px-6 py-2.5 font-medium">Setor</th>
-              <th className="px-6 py-2.5 text-right font-medium">Planejado</th>
-              <th className="px-6 py-2.5 text-right font-medium">Ativos</th>
-              <th className="px-6 py-2.5 text-right font-medium">Afastados</th>
-              <th className="px-6 py-2.5 text-right font-medium">Férias</th>
-              <th className="px-6 py-2.5 text-right font-medium">Ocupação</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ocupacaoPorSetor.map((setor) => {
-              const ocupacao =
-                setor.headcount_planejado > 0
-                  ? Math.round((setor.ativos / setor.headcount_planejado) * 100)
-                  : 0;
-              return (
-                <tr key={setor.id} className="border-b border-line last:border-0">
-                  <td className="px-6 py-2.5 font-medium">
-                    <Link
-                      href={`/estrutura/${setor.id}`}
-                      className="transition-colors hover:text-ink-soft"
-                    >
-                      {setor.nome}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-2.5 text-right text-ink-soft">
-                    {setor.headcount_planejado}
-                  </td>
-                  <td className="px-6 py-2.5 text-right">{setor.ativos}</td>
-                  <td className="px-6 py-2.5 text-right text-ink-soft">
-                    {setor.afastados}
-                  </td>
-                  <td className="px-6 py-2.5 text-right text-ink-soft">{setor.ferias}</td>
-                  <td
-                    className={`px-6 py-2.5 text-right font-medium ${
-                      ocupacao < 70 ? "text-negative" : ""
-                    }`}
-                  >
-                    {ocupacao}%
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
     </>
   );
 }
