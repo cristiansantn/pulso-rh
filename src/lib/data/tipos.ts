@@ -388,3 +388,66 @@ export const NOTAS_POTENCIAL: Record<NotaAvaliacao, string> = {
   2: "Médio",
   3: "Alto",
 };
+
+/** Perfil comportamental (Fase 7). */
+
+export type FatorDisc = "D" | "I" | "S" | "C";
+
+/** Ordem canonica de exibicao dos fatores. */
+export const FATORES_DISC: FatorDisc[] = ["D", "I", "S", "C"];
+
+export interface DefinicaoFatorDisc {
+  nome: string;
+  /** O que o fator descreve, em uma linha. */
+  enfase: string;
+  comunicacao: string;
+  decisao: string;
+}
+
+/**
+ * Catalogo da metodologia DISC. Os estilos de comunicacao e decisao sao os
+ * do fator predominante — descrevem estilo de trabalho, nunca desempenho.
+ */
+export const DISC: Record<FatorDisc, DefinicaoFatorDisc> = {
+  D: {
+    nome: "Dominância",
+    enfase: "Foco em resultados e ação",
+    comunicacao: "Direta e objetiva",
+    decisao: "Rápida, orientada a resultado",
+  },
+  I: {
+    nome: "Influência",
+    enfase: "Foco em pessoas e entusiasmo",
+    comunicacao: "Expressiva e envolvente",
+    decisao: "Intuitiva, orientada a pessoas",
+  },
+  S: {
+    nome: "Estabilidade",
+    enfase: "Foco em ritmo e cooperação",
+    comunicacao: "Calma e paciente",
+    decisao: "Ponderada, busca consenso",
+  },
+  C: {
+    nome: "Conformidade",
+    enfase: "Foco em precisão e processo",
+    comunicacao: "Precisa e formal",
+    decisao: "Analítica, baseada em dados",
+  },
+};
+
+/**
+ * Perfil registrado para uma pessoa. Mantido separado de performance por
+ * principio: perfil nao e nota e nao entra em avaliacao. Reavaliacoes geram
+ * novos registros; as leituras usam o mais recente.
+ */
+export interface PerfilComportamental {
+  id: string;
+  colaborador_id: string;
+  metodologia: string;
+  fator_primario: FatorDisc;
+  /** Nulo em perfis puros, sem segundo fator relevante. */
+  fator_secundario: FatorDisc | null;
+  data_avaliacao: string;
+}
+
+export type NovoPerfilComportamental = Omit<PerfilComportamental, "id">;

@@ -74,9 +74,11 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 
 ## Fase 7 — Perfil Comportamental
 
-- [ ] Registro de perfis (DISC ou metodologia adotada), separado de performance
-- [ ] Perfil predominante e secundario, estilos de comunicacao e decisao
-- [ ] Mapa comportamental por equipe
+- [x] Registro de perfis (DISC), separado de performance
+      (leitura pela demo/seed, como na Fase 6; aplicacao do assessment e
+      lancamento pela interface entram em fase posterior)
+- [x] Perfil predominante e secundario, estilos de comunicacao e decisao
+- [x] Mapa comportamental por equipe (por setor e por gestor direto)
 
 ## Fase 8 — Talentos e Sucessao
 

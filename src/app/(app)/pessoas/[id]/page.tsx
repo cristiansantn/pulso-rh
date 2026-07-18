@@ -15,11 +15,14 @@ import {
   media,
   quadrante,
 } from "@/lib/analytics/performance";
+import { formatarPerfil } from "@/lib/analytics/comportamento";
 import { buscarColaborador } from "@/lib/data/colaboradores";
+import { listarPerfis } from "@/lib/data/comportamento";
 import { listarAfastamentos, listarOcorrencias } from "@/lib/data/frequencia";
 import { listarAvaliacoes, listarIndicadoresMensais } from "@/lib/data/performance";
 import {
   CATEGORIAS_AFASTAMENTO,
+  DISC,
   INDICADORES,
   MOTIVOS_DESLIGAMENTO,
   NOTAS_PERFORMANCE,
@@ -79,13 +82,14 @@ export default async function FichaColaboradorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [colaborador, ocorrencias, afastamentos, indicadores, avaliacoes] =
+  const [colaborador, ocorrencias, afastamentos, indicadores, avaliacoes, perfis] =
     await Promise.all([
       buscarColaborador(id),
       listarOcorrencias({ colaboradorId: id }),
       listarAfastamentos({ colaboradorId: id }),
       listarIndicadoresMensais({ colaboradorId: id }),
       listarAvaliacoes({ colaboradorId: id }),
+      listarPerfis({ colaboradorId: id }),
     ]);
 
   if (!colaborador) {
@@ -107,8 +111,9 @@ export default async function FichaColaboradorPage({
     })
     .filter((resumo) => resumo !== null);
 
-  // A consulta vem ordenada do ciclo mais recente para o mais antigo.
+  // As consultas vem ordenadas do registro mais recente para o mais antigo.
   const avaliacaoRecente = avaliacoes[0];
+  const perfilVigente = perfis[0];
 
   // Historico unificado de frequencia, mais recente primeiro.
   const historico = [
@@ -252,6 +257,38 @@ export default async function FichaColaboradorPage({
                 ))}
               </dl>
             )}
+          </section>
+        )}
+
+        {perfilVigente && (
+          <section className="rounded-lg border border-line bg-panel p-6">
+            <h2 className="text-sm font-semibold">Perfil comportamental</h2>
+            <p className="mt-0.5 text-xs text-ink-muted">
+              DISC · avaliado em {formatarData(perfilVigente.data_avaliacao)} ·
+              descreve estilo de trabalho, não desempenho.
+            </p>
+            <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <Campo
+                rotulo="Perfil"
+                valor={`${formatarPerfil(perfilVigente)} — ${DISC[perfilVigente.fator_primario].nome}${
+                  perfilVigente.fator_secundario
+                    ? ` com ${DISC[perfilVigente.fator_secundario].nome}`
+                    : ""
+                }`}
+              />
+              <Campo
+                rotulo="Ênfase"
+                valor={DISC[perfilVigente.fator_primario].enfase}
+              />
+              <Campo
+                rotulo="Comunicação"
+                valor={DISC[perfilVigente.fator_primario].comunicacao}
+              />
+              <Campo
+                rotulo="Decisão"
+                valor={DISC[perfilVigente.fator_primario].decisao}
+              />
+            </dl>
           </section>
         )}
 

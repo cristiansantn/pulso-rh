@@ -1,13 +1,15 @@
 import { diasAtrasIso, formatarIsoLocal } from "@/lib/datas";
-import { INDICADORES } from "./tipos";
+import { FATORES_DISC, INDICADORES } from "./tipos";
 import type {
   Afastamento,
   Avaliacao,
   Cargo,
   Colaborador,
+  FatorDisc,
   IndicadorMensal,
   NotaAvaliacao,
   Ocorrencia,
+  PerfilComportamental,
   Setor,
   TipoIndicador,
   Turno,
@@ -825,6 +827,92 @@ function gerarAvaliacoes(): Avaliacao[] {
 
 const avaliacoesIniciais: Avaliacao[] = gerarAvaliacoes();
 
+/**
+ * Fase 7: perfis comportamentais (DISC). Como nos geradores anteriores, roda
+ * DEPOIS de todos — a ordem das chamadas ao PRNG preserva o quadro.
+ *
+ * O perfil descreve estilo, nunca desempenho. O mapa narrativo fixa as
+ * pecas-chave e o restante segue o vies plausivel de cada funcao (operacao
+ * pende a S/C, visual a I/C). Camada discreta da historia: o Caixa e um time
+ * de perfil S — pessoas que valorizam rotina e previsibilidade — convivendo
+ * com a escala mais instavel da loja. Nenhuma tela afirma a relacao; o mapa
+ * por equipe deixa o padrao a vista de quem investiga.
+ */
+const PERFIS_NARRATIVA: Record<string, [FatorDisc, FatorDisc | null]> = {
+  "p-carolina": ["D", "C"],
+  "p-pamela": ["I", "D"],
+  "p-daniela": ["C", "S"],
+  "p-luana": ["D", "I"],
+  "p-kimbelly": ["S", "C"],
+  "p-diana": ["S", "C"],
+  "p-mercia": ["S", "I"],
+  "p-layane": ["S", "C"],
+  "p-rute": ["I", "S"],
+  "p-paola": ["I", "C"],
+  "p-edy": ["C", "D"],
+  "p-alef": ["C", "S"],
+};
+
+/** Fatores mais provaveis por setor; a repeticao pondera o sorteio. */
+const VIES_DISC_POR_SETOR: Record<string, readonly FatorDisc[]> = {
+  "s-caixa": ["S", "S", "S", "C"],
+  "s-reserva": ["S", "C", "C", "D"],
+  "s-picking": ["S", "C", "D"],
+  "s-sfs": ["C", "S", "D"],
+  "s-pd": ["C", "C", "S"],
+  "s-vm": ["I", "I", "C", "S"],
+  "s-vmo": ["I", "C", "S"],
+  "s-oploja": ["I", "S", "S", "D"],
+  "s-provadores": ["I", "S"],
+};
+
+function gerarPerfis(): PerfilComportamental[] {
+  const perfis: PerfilComportamental[] = [];
+  const corteAdmissao = diasAtrasIso(90);
+  let sequencia = 0;
+
+  for (const colaborador of colaboradoresIniciais) {
+    if (colaborador.status === "desligado") continue;
+    // Assessment aplicado apos a integracao; temporarios ficam de fora.
+    if (!colaborador.data_admissao || colaborador.data_admissao > corteAdmissao) {
+      continue;
+    }
+    if (colaborador.tipo_contrato === "Temporário") continue;
+
+    const fixo = PERFIS_NARRATIVA[colaborador.id];
+    let primario: FatorDisc;
+    let secundario: FatorDisc | null;
+    if (fixo) {
+      [primario, secundario] = fixo;
+    } else {
+      const vies = colaborador.setor_id
+        ? (VIES_DISC_POR_SETOR[colaborador.setor_id] ?? FATORES_DISC)
+        : FATORES_DISC;
+      primario = escolher(vies);
+      secundario =
+        aleatorio() < 0.85
+          ? escolher(FATORES_DISC.filter((fator) => fator !== primario))
+          : null;
+    }
+
+    sequencia += 1;
+    perfis.push({
+      id: `pc-seed-${sequencia}`,
+      colaborador_id: colaborador.id,
+      metodologia: "disc",
+      fator_primario: primario,
+      fator_secundario: secundario,
+      // Onda unica de mapeamento, encerrada ha ~45 dias; como todos os
+      // avaliados tem 90+ dias de casa, a data nunca antecede a admissao.
+      data_avaliacao: diasAtrasIso(inteiro(45, 85)),
+    });
+  }
+
+  return perfis;
+}
+
+const perfisIniciais: PerfilComportamental[] = gerarPerfis();
+
 interface EstadoDemo {
   setores: Setor[];
   cargos: Cargo[];
@@ -835,15 +923,16 @@ interface EstadoDemo {
   vagaEventos: VagaEvento[];
   indicadores: IndicadorMensal[];
   avaliacoes: Avaliacao[];
+  perfis: PerfilComportamental[];
 }
 
 // A chave versionada descarta estados de formatos antigos que sobrevivem no
 // globalThis durante o desenvolvimento.
 const escopoGlobal = globalThis as typeof globalThis & {
-  __estadoDemoV6?: EstadoDemo;
+  __estadoDemoV7?: EstadoDemo;
 };
 
-const estado: EstadoDemo = (escopoGlobal.__estadoDemoV6 ??= {
+const estado: EstadoDemo = (escopoGlobal.__estadoDemoV7 ??= {
   setores: setoresIniciais,
   cargos: cargosIniciais,
   colaboradores: colaboradoresIniciais,
@@ -853,6 +942,7 @@ const estado: EstadoDemo = (escopoGlobal.__estadoDemoV6 ??= {
   vagaEventos: vagaEventosIniciais,
   indicadores: indicadoresIniciais,
   avaliacoes: avaliacoesIniciais,
+  perfis: perfisIniciais,
 });
 
 export const setoresDemo = estado.setores;
@@ -864,3 +954,4 @@ export const vagasDemo = estado.vagas;
 export const vagaEventosDemo = estado.vagaEventos;
 export const indicadoresDemo = estado.indicadores;
 export const avaliacoesDemo = estado.avaliacoes;
+export const perfisDemo = estado.perfis;
