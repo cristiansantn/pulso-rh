@@ -7,10 +7,10 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+// O icone da aba vem da convencao de arquivo src/app/icon.png.
 export const metadata: Metadata = {
-  title: "Painel de Controle | People Analytics",
+  title: "People Analytics C&A",
   description: "Gestão de pessoas e analytics da operação de loja",
-  icons: { icon: "/logo-cea.webp" },
 };
 
 export default function RootLayout({

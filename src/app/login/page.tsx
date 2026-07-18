@@ -26,8 +26,8 @@ export default async function LoginPage({
           <div className="flex items-center gap-3">
             <Image src="/logo-cea.webp" alt="C&A" width={44} height={44} />
             <div>
-              <p className="text-base font-semibold tracking-tight">Painel de Controle</p>
-              <p className="text-xs text-ink-muted">People Analytics C&amp;A</p>
+              <p className="text-base font-semibold tracking-tight">People Analytics C&amp;A</p>
+              <p className="text-xs text-ink-muted">Center Norte - SP2</p>
             </div>
           </div>
 

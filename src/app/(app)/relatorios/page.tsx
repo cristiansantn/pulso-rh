@@ -183,7 +183,7 @@ export default async function RelatoriosPage() {
         <div className="mb-6 hidden print:block">
           <h1 className="text-xl font-semibold">Relatório da operação</h1>
           <p className="text-sm text-ink-muted">
-            Painel de Controle · People Analytics C&amp;A · gerado em{" "}
+            People Analytics C&amp;A · Center Norte - SP2 · gerado em{" "}
             {formatarDataBr(hoje)}
           </p>
         </div>
