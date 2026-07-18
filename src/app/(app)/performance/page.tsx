@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GridNine, Plus } from "@phosphor-icons/react/dist/ssr";
+import { GraficoLinha } from "@/components/charts/grafico-linha";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -329,7 +330,6 @@ export default async function PerformancePage({
       <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {tiposPresentes.map((tipo) => {
           const serie = serieMensal(indicadoresRecorte, tipo, competenciasAsc);
-          const maiorPonto = Math.max(...serie.map((p) => p.media ?? 0), 1);
           const atual = serie.find((p) => p.competencia === competencia);
           const anterior = competenciaAnterior
             ? serie.find((p) => p.competencia === competenciaAnterior)
@@ -354,29 +354,14 @@ export default async function PerformancePage({
                       .toFixed(1)
                       .replace(".", ",")}% vs ${formatarCompetencia(competenciaAnterior)}`}
               </p>
-              <div className="mt-3 flex h-12 items-end gap-1">
-                {serie.map((ponto) => (
-                  <div
-                    key={ponto.competencia}
-                    className="flex flex-1 flex-col items-center gap-1"
-                  >
-                    <div className="flex h-9 w-full flex-col justify-end">
-                      <div
-                        className={`w-full rounded-t ${
-                          ponto.competencia === competencia
-                            ? "bg-brand/80"
-                            : "bg-brand/35"
-                        }`}
-                        style={{
-                          height: `${((ponto.media ?? 0) / maiorPonto) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-ink-muted">
-                      {formatarCompetencia(ponto.competencia).split("/")[0]}
-                    </span>
-                  </div>
-                ))}
+              <div className="mt-3">
+                <GraficoLinha
+                  pontos={serie.map((ponto) => ({
+                    rotulo: formatarCompetencia(ponto.competencia),
+                    valor: ponto.media,
+                    destaque: ponto.competencia === competencia,
+                  }))}
+                />
               </div>
             </div>
           );

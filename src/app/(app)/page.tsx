@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { GraficoColunas } from "@/components/charts/grafico-colunas";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -318,19 +319,14 @@ export default async function VisaoGeralPage() {
           Quadro ativo · {totalComIdade}{" "}
           {totalComIdade === 1 ? "pessoa com idade informada" : "pessoas com idade informada"}.
         </p>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {demografia.map((item) => (
-            <div key={item.faixa} className="rounded-md border border-line bg-surface p-4">
-              <p className="text-xs text-ink-muted">{item.faixa} anos</p>
-              <p className="mt-1 text-xl font-semibold">{item.pessoas}</p>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-neutral-soft">
-                <div
-                  className="h-full rounded-full bg-brand/70"
-                  style={{ width: `${(item.pessoas / maiorFaixa) * 100}%` }}
-                />
-              </div>
-            </div>
-          ))}
+        <div className="mt-5">
+          <GraficoColunas
+            dados={demografia.map((item) => ({
+              rotulo: `${item.faixa} anos`,
+              valor: item.pessoas,
+              destaque: item.pessoas === maiorFaixa && maiorFaixa > 0,
+            }))}
+          />
         </div>
       </section>
 

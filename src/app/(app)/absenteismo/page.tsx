@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GraficoColunas } from "@/components/charts/grafico-colunas";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -22,6 +23,10 @@ const DIAS_SEMANA = [
   "Sexta",
   "Sábado",
 ];
+
+// Ordem util (segunda a domingo) e abreviacoes para o eixo do grafico.
+const ORDEM_SEMANA = [1, 2, 3, 4, 5, 6, 0];
+const DIAS_ABREV = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 const PERIODOS: Record<string, string> = {
   "30": "Últimos 30 dias",
@@ -247,20 +252,15 @@ export default async function AbsenteismoPage({
               Distribuição dos dias perdidos no período.
             </p>
           </div>
-          <ul className="space-y-3 px-6 py-4">
-            {porDiaDaSemana.map((dia) => (
-              <li key={dia.rotulo} className="flex items-center gap-3 text-sm">
-                <span className="w-20 text-ink-soft">{dia.rotulo}</span>
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-soft">
-                  <div
-                    className="h-full rounded-full bg-brand/80"
-                    style={{ width: `${(dia.total / maiorDia) * 100}%` }}
-                  />
-                </div>
-                <span className="w-8 text-right font-medium">{dia.total}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="px-6 pt-5 pb-4">
+            <GraficoColunas
+              dados={ORDEM_SEMANA.map((indice) => ({
+                rotulo: DIAS_ABREV[indice],
+                valor: porDiaDaSemana[indice].total,
+                destaque: porDiaDaSemana[indice].total === maiorDia && maiorDia > 1,
+              }))}
+            />
+          </div>
         </section>
 
         <TabelaCorte

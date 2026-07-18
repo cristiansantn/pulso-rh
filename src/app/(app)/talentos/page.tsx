@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plus } from "@phosphor-icons/react/dist/ssr";
+import { GraficoDonut } from "@/components/charts/grafico-donut";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -19,11 +20,11 @@ import {
 /** Cargos considerados criticos para a continuidade da operacao. */
 const CARGOS_CHAVE_IDS = ["c-gerente", "c-coordenador", "c-supervisor", "c-lider"];
 
-/** Cor da faixa de prontidao; pronto agora ganha o tom positivo. */
-const COR_PRONTIDAO: Record<Prontidao, string> = {
-  pronto: "bg-positive",
-  "6_meses": "bg-brand/70",
-  "12_meses": "bg-brand/30",
+/** Cor de cada faixa no donut; pronto agora ganha o tom positivo. */
+const CORES_PRONTIDAO: Record<Prontidao, { cor: string; opacidade?: number }> = {
+  pronto: { cor: "var(--color-positive)" },
+  "6_meses": { cor: "var(--color-brand)", opacidade: 0.7 },
+  "12_meses": { cor: "var(--color-brand)", opacidade: 0.3 },
 };
 
 function EtiquetaProntidao({ prontidao }: { prontidao: Prontidao }) {
@@ -147,20 +148,16 @@ export default async function TalentosPage() {
             {totalMapeados} {totalMapeados === 1 ? "sucessor" : "sucessores"} mapeados
           </span>
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {distribuicao.map((faixa) => (
-            <div key={faixa.prontidao} className="rounded-md border border-line bg-surface p-4">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <span
-                    className={`inline-block size-2.5 rounded-full ${COR_PRONTIDAO[faixa.prontidao]}`}
-                  />
-                  {PRONTIDAO[faixa.prontidao]}
-                </span>
-                <span className="text-lg font-semibold">{faixa.pessoas}</span>
-              </div>
-            </div>
-          ))}
+        <div className="mt-5">
+          <GraficoDonut
+            fatias={distribuicao.map((faixa) => ({
+              rotulo: PRONTIDAO[faixa.prontidao],
+              valor: faixa.pessoas,
+              ...CORES_PRONTIDAO[faixa.prontidao],
+            }))}
+            valorCentral={totalMapeados}
+            rotuloCentral={totalMapeados === 1 ? "sucessor" : "sucessores"}
+          />
         </div>
       </section>
 
