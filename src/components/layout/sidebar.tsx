@@ -53,7 +53,7 @@ const SECOES: SecaoNav[] = [
       { href: "/turnover", rotulo: "Turnover", icone: Swap },
       { href: "/absenteismo", rotulo: "Absenteísmo", icone: Pulse },
       { href: "/analytics", rotulo: "People Analytics", icone: ChartScatter, emBreve: true },
-      { href: "/alertas", rotulo: "Alertas", icone: WarningCircle, emBreve: true },
+      { href: "/alertas", rotulo: "Alertas", icone: WarningCircle },
     ],
   },
   {

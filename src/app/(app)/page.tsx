@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -7,30 +8,50 @@ import {
   taxaAbsenteismo,
   type Periodo,
 } from "@/lib/analytics/absenteismo";
+import {
+  CATEGORIA_LABEL,
+  gerarAlertas,
+  resumoPorSeveridade,
+  SEVERIDADE_LABEL,
+  type SeveridadeAlerta,
+} from "@/lib/analytics/alertas";
 import { vagaEmAtraso } from "@/lib/analytics/recrutamento";
-import { desligadosDesde, indiceDeSaida } from "@/lib/analytics/turnover";
+import {
+  desligadosDesde,
+  faixaEtaria,
+  FAIXAS_ETARIAS,
+  indiceDeSaida,
+  seriePorMes,
+} from "@/lib/analytics/turnover";
 import { listarColaboradores } from "@/lib/data/colaboradores";
 import { listarAfastamentos, listarOcorrencias } from "@/lib/data/frequencia";
 import { listarSetores } from "@/lib/data/setores";
+import { listarPlanosSucessao } from "@/lib/data/talentos";
 import { listarVagas } from "@/lib/data/vagas";
 import { diasAtrasIso, hojeIso } from "@/lib/datas";
 
+const PONTO_SEVERIDADE: Record<SeveridadeAlerta, string> = {
+  alta: "bg-negative",
+  media: "bg-warning",
+  baixa: "bg-brand",
+};
+
 /**
- * Visao Geral (cockpit da operacao).
- * Nesta fase exibe os indicadores derivados do cadastro e da frequencia.
- * Turnover e demais KPIs aparecem como pendentes ate seus modulos entrarem no ar.
+ * Visao Geral (cockpit da operacao). Consolida o quadro, os indicadores dos
+ * modulos analiticos, o motor de alertas e os graficos de acompanhamento.
  */
 export default async function VisaoGeralPage() {
   // Mesmo periodo da pagina de Absenteismo, para os numeros baterem entre telas.
   const periodo: Periodo = { inicio: diasAtrasIso(90), fim: hojeIso() };
 
-  const [colaboradores, setores, ocorrencias, afastamentos, vagas] =
+  const [colaboradores, setores, ocorrencias, afastamentos, vagas, planosSucessao] =
     await Promise.all([
       listarColaboradores(),
       listarSetores(),
       listarOcorrencias({ desde: periodo.inicio }),
       listarAfastamentos({ desde: periodo.inicio }),
       listarVagas(),
+      listarPlanosSucessao(),
     ]);
 
   const porStatus = (status: string) =>
@@ -58,6 +79,62 @@ export default async function VisaoGeralPage() {
   const desligados12m = desligadosDesde(colaboradores, diasAtrasIso(365));
   const indiceSaida12m = indiceDeSaida(desligados12m.length, quadroAtual.length);
 
+  // Motor de alertas: resumo e os mais prioritarios para o cockpit.
+  const alertas = gerarAlertas({
+    colaboradores,
+    setores,
+    ocorrencias,
+    afastamentos,
+    vagas,
+    planosSucessao,
+    periodo,
+  });
+  const resumoAlertas = resumoPorSeveridade(alertas);
+  const alertasDestaque = alertas.slice(0, 4);
+
+  // Serie mensal de turnover (12 meses).
+  const serieTurnover = seriePorMes(desligados12m, 12);
+  const maiorMesTurnover = Math.max(
+    ...serieTurnover.map((m) => m.voluntarios + m.involuntarios),
+    1,
+  );
+
+  // Absenteismo por setor no periodo, do maior para o menor.
+  const absenteismoPorSetor = setores
+    .map((setor) => {
+      const idsEquipe = new Set(
+        quadroAtual.filter((c) => c.setor_id === setor.id).map((c) => c.id),
+      );
+      const perdidos = diasPerdidos.filter((d) =>
+        idsEquipe.has(d.colaborador_id),
+      ).length;
+      return {
+        setor,
+        taxa: taxaAbsenteismo(perdidos, idsEquipe.size, periodo),
+      };
+    })
+    .filter((linha): linha is { setor: (typeof setores)[number]; taxa: number } =>
+      linha.taxa !== null && linha.taxa > 0,
+    )
+    .sort((a, b) => b.taxa - a.taxa)
+    .slice(0, 6);
+  const maiorTaxaSetor = Math.max(...absenteismoPorSetor.map((l) => l.taxa), 1);
+
+  // Demografia por faixa etaria (quadro ativo).
+  const hoje = hojeIso();
+  const contagemFaixa = new Map<string, number>();
+  for (const pessoa of quadroAtual) {
+    if (!pessoa.data_nascimento) continue;
+    const faixa = faixaEtaria(pessoa.data_nascimento, hoje);
+    contagemFaixa.set(faixa, (contagemFaixa.get(faixa) ?? 0) + 1);
+  }
+  const totalComIdade = [...contagemFaixa.values()].reduce((s, n) => s + n, 0);
+  const demografia = FAIXAS_ETARIAS.map((faixa) => ({
+    faixa,
+    pessoas: contagemFaixa.get(faixa) ?? 0,
+  }));
+  const maiorFaixa = Math.max(...demografia.map((d) => d.pessoas), 1);
+
   const ocupacaoPorSetor = setores.map((setor) => {
     const equipe = colaboradores.filter(
       (c) => c.setor_id === setor.id && c.status !== "desligado",
@@ -74,7 +151,7 @@ export default async function VisaoGeralPage() {
     <>
       <PageHeader
         titulo="Visão Geral"
-        descricao="Fotografia atual da operação. Novos indicadores entram conforme os módulos do roadmap são concluídos."
+        descricao="Fotografia atual da operação: quadro, indicadores dos módulos analíticos, alertas e acompanhamento."
       />
 
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-8">
@@ -106,14 +183,158 @@ export default async function VisaoGeralPage() {
           detalhe={vagasEmAtraso > 0 ? `${vagasEmAtraso} em atraso` : "Nenhuma em atraso"}
         />
         <KpiCard
-          rotulo="Cobertura de escala"
-          valor="—"
-          detalhe="Aguarda integração com o ponto"
-          pendente
+          rotulo="Alertas ativos"
+          valor={String(alertas.length)}
+          detalhe={
+            resumoAlertas.alta > 0
+              ? `${resumoAlertas.alta} de prioridade alta`
+              : "Nenhum de prioridade alta"
+          }
         />
       </section>
 
       <section className="mt-8 rounded-lg border border-line bg-panel">
+        <div className="flex items-center justify-between border-b border-line px-6 py-4">
+          <div>
+            <h2 className="text-sm font-semibold">Alertas da operação</h2>
+            <p className="mt-0.5 text-xs text-ink-muted">
+              Desvios em relação à média, às metas e aos limiares.
+            </p>
+          </div>
+          <Link
+            href="/alertas"
+            className="flex items-center gap-1.5 text-sm text-brand transition-colors hover:text-brand-strong"
+          >
+            Ver todos
+            <ArrowRight size={15} />
+          </Link>
+        </div>
+        {alertas.length === 0 ? (
+          <p className="px-6 py-8 text-center text-sm text-ink-muted">
+            Nenhum desvio acima dos limiares no momento.
+          </p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {alertasDestaque.map((alerta) => (
+              <li key={alerta.id}>
+                <Link
+                  href={alerta.href}
+                  className="flex items-center gap-3 px-6 py-3 transition-colors hover:bg-surface"
+                >
+                  <span
+                    className={`inline-block size-2 shrink-0 rounded-full ${PONTO_SEVERIDADE[alerta.severidade]}`}
+                    title={SEVERIDADE_LABEL[alerta.severidade]}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="text-sm font-medium">{alerta.titulo}</span>
+                    <span className="ml-2 text-sm text-ink-soft">{alerta.descricao}</span>
+                  </span>
+                  <span className="hidden shrink-0 text-xs text-ink-muted sm:block">
+                    {CATEGORIA_LABEL[alerta.categoria]}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-lg border border-line bg-panel p-6">
+          <h2 className="text-sm font-semibold">Turnover mensal</h2>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            Desligamentos por mês (12 meses), voluntários e involuntários.
+          </p>
+          <div className="mt-4 flex h-40 items-end gap-1.5">
+            {serieTurnover.map((mes) => {
+              const total = mes.voluntarios + mes.involuntarios;
+              return (
+                <div key={mes.chave} className="flex flex-1 flex-col items-center gap-1">
+                  <div className="flex h-32 w-full flex-col justify-end">
+                    <div
+                      className="w-full rounded-t-sm bg-negative/70"
+                      style={{ height: `${(mes.involuntarios / maiorMesTurnover) * 100}%` }}
+                      title={`${mes.involuntarios} involuntário(s)`}
+                    />
+                    <div
+                      className="w-full bg-brand/70"
+                      style={{ height: `${(mes.voluntarios / maiorMesTurnover) * 100}%` }}
+                      title={`${mes.voluntarios} voluntário(s)`}
+                    />
+                  </div>
+                  <span className="text-[10px] text-ink-muted">{mes.rotulo}</span>
+                  <span className="text-[10px] font-medium text-ink-soft">
+                    {total > 0 ? total : ""}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex gap-4 text-xs text-ink-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block size-2.5 rounded-sm bg-brand/70" />
+              Voluntário
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block size-2.5 rounded-sm bg-negative/70" />
+              Involuntário
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-line bg-panel p-6">
+          <h2 className="text-sm font-semibold">Absenteísmo por setor</h2>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            Maiores taxas nos últimos 90 dias.
+          </p>
+          {absenteismoPorSetor.length === 0 ? (
+            <p className="mt-6 text-sm text-ink-muted">Sem dias perdidos no período.</p>
+          ) : (
+            <ul className="mt-4 space-y-2.5">
+              {absenteismoPorSetor.map((linha) => (
+                <li key={linha.setor.id} className="flex items-center gap-3 text-sm">
+                  <span className="w-40 shrink-0 truncate" title={linha.setor.nome}>
+                    {linha.setor.nome}
+                  </span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-soft">
+                    <div
+                      className="h-full rounded-full bg-brand/80"
+                      style={{ width: `${(linha.taxa / maiorTaxaSetor) * 100}%` }}
+                    />
+                  </div>
+                  <span className="w-12 shrink-0 text-right font-medium">
+                    {formatarTaxa(linha.taxa)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-lg border border-line bg-panel p-6">
+        <h2 className="text-sm font-semibold">Demografia por faixa etária</h2>
+        <p className="mt-0.5 text-xs text-ink-muted">
+          Quadro ativo · {totalComIdade}{" "}
+          {totalComIdade === 1 ? "pessoa com idade informada" : "pessoas com idade informada"}.
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {demografia.map((item) => (
+            <div key={item.faixa} className="rounded-md border border-line bg-surface p-4">
+              <p className="text-xs text-ink-muted">{item.faixa} anos</p>
+              <p className="mt-1 text-xl font-semibold">{item.pessoas}</p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-neutral-soft">
+                <div
+                  className="h-full rounded-full bg-brand/70"
+                  style={{ width: `${(item.pessoas / maiorFaixa) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-lg border border-line bg-panel">
         <div className="border-b border-line px-6 py-4">
           <h2 className="text-sm font-semibold">Ocupação por setor</h2>
           <p className="mt-0.5 text-xs text-ink-muted">

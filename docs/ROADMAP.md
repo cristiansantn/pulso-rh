@@ -90,9 +90,11 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 
 ## Fase 9 — Cockpit e Alertas
 
-- [ ] Home com indicadores consolidados (headcount, turnover, absenteismo, cobertura...)
-- [ ] Graficos: planejado x realizado, turnover mensal, absenteismo por setor, demografia
-- [ ] Motor de alertas: desvios em relacao a media (absenteismo, vagas em atraso, turnover precoce)
+- [x] Home com indicadores consolidados (headcount, turnover, absenteismo, vagas, alertas)
+- [x] Graficos: planejado x realizado (ocupacao por setor), turnover mensal,
+      absenteismo por setor, demografia por faixa etaria
+- [x] Motor de alertas: desvios em relacao a media/meta/limiar (absenteismo por setor,
+      cobertura, turnover precoce, vagas em atraso, cargo-chave sem sucessor pronto)
 
 ## Fase 10 — People Analytics e Health Score
 
