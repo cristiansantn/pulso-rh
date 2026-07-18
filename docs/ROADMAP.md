@@ -98,9 +98,11 @@ analiticas (cockpit, alertas, insights), que so fazem sentido quando ha dados ac
 
 ## Fase 10 — People Analytics e Health Score
 
-- [ ] Central de insights: pergunta + evidencia + hipotese + acao sugerida
-- [ ] People Health Score geral e por setor
-- [ ] Relatorios exportaveis
+- [x] Central de insights: pergunta + evidencia + hipotese + acao sugerida
+      (gerada dos dados, com hipotese sempre rotulada — correlacao, nunca causa)
+- [x] People Health Score geral e por setor (presenca, retencao, cobertura;
+      dimensoes abertas e pesos declarados — indice direcional, nao diagnostico)
+- [x] Relatorios exportaveis (PDF via impressao do navegador e CSV da planilha)
       
 ## Questionamentos e Melhorias (Vale uma ponderação antes de serem executados e devem ser removidos da lista quando resolvidos ou respondidos)
 

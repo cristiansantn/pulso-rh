@@ -52,7 +52,7 @@ const SECOES: SecaoNav[] = [
       { href: "/talentos", rotulo: "Talentos & Sucessão", icone: Medal },
       { href: "/turnover", rotulo: "Turnover", icone: Swap },
       { href: "/absenteismo", rotulo: "Absenteísmo", icone: Pulse },
-      { href: "/analytics", rotulo: "People Analytics", icone: ChartScatter, emBreve: true },
+      { href: "/analytics", rotulo: "People Analytics", icone: ChartScatter },
       { href: "/alertas", rotulo: "Alertas", icone: WarningCircle },
     ],
   },
@@ -60,7 +60,7 @@ const SECOES: SecaoNav[] = [
     titulo: "Gestão",
     itens: [
       { href: "/vagas", rotulo: "Vagas & Recrutamento", icone: Briefcase },
-      { href: "/relatorios", rotulo: "Relatórios", icone: FileText, emBreve: true },
+      { href: "/relatorios", rotulo: "Relatórios", icone: FileText },
       { href: "/configuracoes", rotulo: "Configurações", icone: GearSix, emBreve: true },
     ],
   },

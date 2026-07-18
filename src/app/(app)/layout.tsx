@@ -13,7 +13,7 @@ export default async function AppLayout({
   const sessao = await sessaoLocal();
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-panel">
+      <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-panel print:hidden">
         <div className="flex items-center gap-3 border-b border-line px-5 py-4">
           <Image
             src="/logo-cea.webp"
@@ -58,7 +58,9 @@ export default async function AppLayout({
       </aside>
 
       <main className="flex-1 overflow-x-hidden">
-        <div className="mx-auto w-full max-w-[1600px] px-10 py-8">{children}</div>
+        <div className="mx-auto w-full max-w-[1600px] px-10 py-8 print:max-w-none print:px-0 print:py-0">
+          {children}
+        </div>
       </main>
     </div>
   );
