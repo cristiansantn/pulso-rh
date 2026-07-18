@@ -149,11 +149,10 @@ export default async function VisaoGeralPage() {
           rotulo="Headcount ativo"
           valor={String(ativos)}
           detalhe={`Planejado: ${headcountPlanejado}`}
-          periodo="Atual"
         />
-        <KpiCard rotulo="Afastados" valor={String(afastados)} periodo="Atual" />
-        <KpiCard rotulo="Em férias" valor={String(ferias)} periodo="Atual" />
-        <KpiCard rotulo="Setores" valor={String(setores.length)} periodo="Atual" />
+        <KpiCard rotulo="Afastados" valor={String(afastados)} />
+        <KpiCard rotulo="Em férias" valor={String(ferias)} />
+        <KpiCard rotulo="Setores" valor={String(setores.length)} />
         <KpiCard
           rotulo="Índice de saída"
           valor={
@@ -161,20 +160,17 @@ export default async function VisaoGeralPage() {
               ? `${indiceSaida12m.toFixed(1).replace(".", ",")}%`
               : "—"
           }
-          detalhe="Sobre o quadro atual"
-          periodo="12 meses"
+          detalhe="Últimos 12 meses, sobre o quadro atual"
         />
         <KpiCard
           rotulo="Absenteísmo"
           valor={formatarTaxa(taxaAbsenteismoGeral)}
-          detalhe="Dias perdidos sobre dias úteis"
-          periodo="90 dias"
+          detalhe="Últimos 90 dias"
         />
         <KpiCard
           rotulo="Vagas abertas"
           valor={String(vagasAbertas.length)}
           detalhe={vagasEmAtraso > 0 ? `${vagasEmAtraso} em atraso` : "Nenhuma em atraso"}
-          periodo="Atual"
         />
         <KpiCard
           rotulo="Alertas ativos"
@@ -184,17 +180,13 @@ export default async function VisaoGeralPage() {
               ? `${resumoAlertas.alta} de prioridade alta`
               : "Nenhum de prioridade alta"
           }
-          periodo="Atual"
         />
       </section>
 
       <section className="mt-8 rounded-lg border border-line bg-panel">
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold">Alertas da operação</h2>
-              <PeriodoBadge periodo="Atual" />
-            </div>
+            <h2 className="text-sm font-semibold">Alertas da operação</h2>
             <p className="mt-0.5 text-xs text-ink-muted">
               Desvios em relação à média, às metas e aos limiares.
             </p>
@@ -321,16 +313,11 @@ export default async function VisaoGeralPage() {
       </section>
 
       <section className="mt-6 rounded-lg border border-line bg-panel p-6">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold">Demografia por faixa etária</h2>
-            <p className="mt-0.5 text-xs text-ink-muted">
-              Quadro ativo · {totalComIdade}{" "}
-              {totalComIdade === 1 ? "pessoa com idade informada" : "pessoas com idade informada"}.
-            </p>
-          </div>
-          <PeriodoBadge periodo="Atual" />
-        </div>
+        <h2 className="text-sm font-semibold">Demografia por faixa etária</h2>
+        <p className="mt-0.5 text-xs text-ink-muted">
+          Quadro ativo · {totalComIdade}{" "}
+          {totalComIdade === 1 ? "pessoa com idade informada" : "pessoas com idade informada"}.
+        </p>
         <div className="mt-5">
           <GraficoColunas
             dados={demografia.map((item) => ({
