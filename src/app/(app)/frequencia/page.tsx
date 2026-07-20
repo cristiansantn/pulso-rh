@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { FirstAidKit, Plus } from "@phosphor-icons/react/dist/ssr";
+import {
+  TabelaAfastamentos,
+  TabelaFaltasAtestados,
+  type DadosFicha,
+} from "@/components/frequencia/tabelas-frequencia";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -56,7 +61,7 @@ export default async function FrequenciaPage({
       listarAfastamentos({ desde: inicio }),
     ]);
 
-  const nomePorId = new Map(colaboradores.map((c) => [c.id, c.nome]));
+  const colabPorId = new Map(colaboradores.map((c) => [c.id, c]));
   const noSetor = new Set(
     colaboradores.filter((c) => !setorId || c.setor_id === setorId).map((c) => c.id),
   );
@@ -81,30 +86,58 @@ export default async function FrequenciaPage({
     (a) => a.data_inicio <= hoje && (a.data_fim === null || a.data_fim >= hoje),
   );
 
-  // Atestados sao ocorrencias do dia a dia e ficam na lista de cima; a secao
-  // de baixo guarda so os casos especiais (INSS, licencas e afins).
   const atestados = afastamentos.filter((a) => a.tipo === "atestado");
   const afastamentosEspeciais = afastamentos.filter((a) => a.tipo === "afastamento");
+
+  function montarFicha(a: (typeof afastamentos)[0]): DadosFicha {
+    const colab = colabPorId.get(a.colaborador_id);
+    return {
+      afastamento: a,
+      nomeColaborador: colab?.nome ?? "—",
+      matricula: colab?.matricula ?? "—",
+      colaboradorId: a.colaborador_id,
+      dataFormatadaInicio: formatarDataBr(a.data_inicio),
+      dataFormatadaFim: a.data_fim ? formatarDataBr(a.data_fim) : null,
+      emCurso: a.data_inicio <= hoje && (a.data_fim === null || a.data_fim >= hoje),
+    };
+  }
 
   const linhasFrequencia = [
     ...faltas.map((o) => ({
       id: o.id,
-      colaborador_id: o.colaborador_id,
+      colaboradorId: o.colaborador_id,
+      nomeColaborador: colabPorId.get(o.colaborador_id)?.nome ?? "—",
       rotulo: TIPOS_OCORRENCIA[o.tipo],
-      inicio: o.data_inicio,
-      fim: o.data_fim,
-      ficha: null as string | null,
+      periodoFormatado: formatarPeriodo(o.data_inicio, o.data_fim),
+      ficha: null as DadosFicha | null,
+      _sort: o.data_inicio,
     })),
     ...atestados.map((a) => ({
       id: a.id,
-      colaborador_id: a.colaborador_id,
+      colaboradorId: a.colaborador_id,
+      nomeColaborador: colabPorId.get(a.colaborador_id)?.nome ?? "—",
       rotulo: TIPOS_AFASTAMENTO[a.tipo],
-      inicio: a.data_inicio,
-      fim: a.data_fim,
-      ficha: `/frequencia/afastamento/${a.id}`,
+      periodoFormatado: formatarPeriodo(a.data_inicio, a.data_fim),
+      ficha: montarFicha(a) as DadosFicha | null,
+      _sort: a.data_inicio,
     })),
-  ].sort((a, b) => b.inicio.localeCompare(a.inicio));
+  ]
+    .sort((a, b) => b._sort.localeCompare(a._sort))
+    .map(({ _sort, ...rest }) => rest);
 
+  const linhasAfastamentos = afastamentosEspeciais.map((a) => ({
+    id: a.id,
+    colaboradorId: a.colaborador_id,
+    nomeColaborador: colabPorId.get(a.colaborador_id)?.nome ?? "—",
+    tipo: a.tipo,
+    categoria: a.categoria,
+    dataInicioFormatada: formatarDataBr(a.data_inicio),
+    dataFimFormatada: a.data_fim ? formatarDataBr(a.data_fim) : null,
+    emCurso: a.data_inicio <= hoje && (a.data_fim === null || a.data_fim >= hoje),
+    ficha: montarFicha(a),
+  }));
+
+  const tituloSecao = PERIODOS[String(periodoDias)].toLowerCase();
   const filtroAtivo = Boolean(params.periodo || params.setor);
 
   return (
@@ -183,133 +216,9 @@ export default async function FrequenciaPage({
         />
       </section>
 
-      <section className="mt-6 overflow-hidden rounded-lg border border-line bg-panel">
-        <div className="border-b border-line px-6 py-4">
-          <h2 className="text-sm font-semibold">
-            Faltas e atestados — {PERIODOS[String(periodoDias)].toLowerCase()}
-          </h2>
-          <p className="mt-0.5 text-xs text-ink-muted">
-            O dia a dia da frequência. O histórico completo de cada pessoa fica
-            na ficha individual; atestados abrem a ficha do registro.
-          </p>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-line text-left text-xs text-ink-muted">
-              <th className="px-6 py-2.5 font-medium">Associado</th>
-              <th className="px-6 py-2.5 font-medium">Tipo</th>
-              <th className="px-6 py-2.5 font-medium">Período</th>
-              <th className="px-6 py-2.5 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
-            {linhasFrequencia.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-6 py-10 text-center text-ink-muted">
-                  Nenhuma falta ou atestado registrado no período.
-                </td>
-              </tr>
-            )}
-            {linhasFrequencia.map((linha) => (
-              <tr
-                key={linha.id}
-                className="border-b border-line transition-colors last:border-0 hover:bg-surface"
-              >
-                <td className="px-6 py-3">
-                  <Link href={`/pessoas/${linha.colaborador_id}`} className="font-medium">
-                    {nomePorId.get(linha.colaborador_id) ?? "—"}
-                  </Link>
-                </td>
-                <td className="px-6 py-3 text-ink-soft">{linha.rotulo}</td>
-                <td className="px-6 py-3 text-ink-soft">
-                  {formatarPeriodo(linha.inicio, linha.fim)}
-                </td>
-                <td className="px-6 py-3 text-right">
-                  {linha.ficha && (
-                    <Link
-                      href={linha.ficha}
-                      className="text-xs font-medium text-ink-soft underline-offset-2 hover:underline"
-                    >
-                      Abrir ficha
-                    </Link>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <TabelaFaltasAtestados linhas={linhasFrequencia} tituloSecao={tituloSecao} />
 
-      <section className="mt-6 overflow-hidden rounded-lg border border-line bg-panel">
-        <div className="border-b border-line px-6 py-4">
-          <h2 className="text-sm font-semibold">
-            Afastamentos — {PERIODOS[String(periodoDias)].toLowerCase()}
-          </h2>
-          <p className="mt-0.5 text-xs text-ink-muted">
-            Somente casos especiais: INSS, licenças e afins. Os detalhes ficam na
-            ficha do afastamento; quando houver papéis de acesso, esta seção passa
-            a ser restrita (LGPD).
-          </p>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-line text-left text-xs text-ink-muted">
-              <th className="px-6 py-2.5 font-medium">Associado</th>
-              <th className="px-6 py-2.5 font-medium">Tipo</th>
-              <th className="px-6 py-2.5 font-medium">Categoria</th>
-              <th className="px-6 py-2.5 font-medium">Início</th>
-              <th className="px-6 py-2.5 font-medium">Retorno previsto</th>
-              <th className="px-6 py-2.5 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
-            {afastamentosEspeciais.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-ink-muted">
-                  Nenhum afastamento registrado no período.
-                </td>
-              </tr>
-            )}
-            {afastamentosEspeciais.map((a) => {
-              const emCurso =
-                a.data_inicio <= hoje && (a.data_fim === null || a.data_fim >= hoje);
-              return (
-                <tr
-                  key={a.id}
-                  className="border-b border-line transition-colors last:border-0 hover:bg-surface"
-                >
-                  <td className="px-6 py-3">
-                    <Link href={`/pessoas/${a.colaborador_id}`} className="font-medium">
-                      {nomePorId.get(a.colaborador_id) ?? "—"}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-3 text-ink-soft">{TIPOS_AFASTAMENTO[a.tipo]}</td>
-                  <td className="px-6 py-3 text-ink-soft">
-                    {CATEGORIAS_AFASTAMENTO[a.categoria]}
-                  </td>
-                  <td className="px-6 py-3 text-ink-soft">{formatarDataBr(a.data_inicio)}</td>
-                  <td className="px-6 py-3 text-ink-soft">
-                    {a.data_fim ? formatarDataBr(a.data_fim) : "Indeterminado"}
-                    {emCurso && (
-                      <span className="ml-2 inline-flex rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-warning">
-                        Em curso
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-3 text-right">
-                    <Link
-                      href={`/frequencia/afastamento/${a.id}`}
-                      className="text-xs font-medium text-ink-soft underline-offset-2 hover:underline"
-                    >
-                      Abrir ficha
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
+      <TabelaAfastamentos linhas={linhasAfastamentos} tituloSecao={tituloSecao} />
     </>
   );
 }
