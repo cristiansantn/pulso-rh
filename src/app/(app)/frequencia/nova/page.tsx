@@ -10,6 +10,7 @@ import { registrarOcorrencia } from "../actions";
 const MENSAGENS_ERRO: Record<string, string> = {
   obrigatorios: "Preencha associado, tipo e data de início.",
   periodo: "A data final não pode ser anterior à data de início.",
+  minutos: "Informe os minutos perdidos no atraso ou na saída antecipada.",
 };
 
 export default async function NovaOcorrenciaPage({
@@ -32,8 +33,8 @@ export default async function NovaOcorrenciaPage({
       </Link>
 
       <PageHeader
-        titulo="Registrar falta"
-        descricao="Justificada ou injustificada. Atestados e afastamentos têm registro próprio; folgas e atrasos entram junto com a escala planejada."
+        titulo="Registrar ocorrência"
+        descricao="Faltas, atrasos e saídas antecipadas. Atestados e afastamentos têm registro próprio; folgas entram junto com a escala planejada."
       />
 
       {erro && MENSAGENS_ERRO[erro] && (
@@ -43,7 +44,7 @@ export default async function NovaOcorrenciaPage({
       )}
 
       <form action={registrarOcorrencia} className="max-w-3xl space-y-6">
-        <Fieldset legenda="Falta">
+        <Fieldset legenda="Ocorrência">
           <div className="sm:col-span-2">
             <Label htmlFor="colaborador_id">Associado</Label>
             <Select id="colaborador_id" name="colaborador_id" required defaultValue="">
@@ -84,7 +85,15 @@ export default async function NovaOcorrenciaPage({
             <Label htmlFor="data_fim">Data final</Label>
             <Input id="data_fim" name="data_fim" type="date" />
             <p className="mt-1 text-xs text-ink-muted">
-              Deixe em branco quando durar um único dia.
+              Deixe em branco quando durar um único dia. Não se aplica a atraso e
+              saída antecipada.
+            </p>
+          </div>
+          <div>
+            <Label htmlFor="minutos">Minutos perdidos</Label>
+            <Input id="minutos" name="minutos" type="number" min={1} />
+            <p className="mt-1 text-xs text-ink-muted">
+              Somente em atraso e saída antecipada.
             </p>
           </div>
         </Fieldset>

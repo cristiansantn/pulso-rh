@@ -40,8 +40,9 @@ export async function registrarOcorrencia(formData: FormData) {
   const tipo = texto(formData, "tipo") as TipoOcorrencia | null;
   const dataInicio = texto(formData, "data_inicio");
   const dataFim = texto(formData, "data_fim");
+  const minutos = texto(formData, "minutos");
 
-  // Somente faltas por enquanto; os demais tipos entram com a escala planejada.
+  // Folga e ferias ficam de fora ate existir a escala planejada.
   if (!colaboradorId || !tipo || !(tipo in TIPOS_OCORRENCIA_ATIVOS) || !dataInicio) {
     redirect("/frequencia/nova?erro=obrigatorios");
   }
@@ -49,12 +50,18 @@ export async function registrarOcorrencia(formData: FormData) {
     redirect("/frequencia/nova?erro=periodo");
   }
 
+  // Atraso e saida antecipada sao pontuais e medidos em minutos perdidos.
+  const pontual = tipo === "atraso" || tipo === "saida_antecipada";
+  if (pontual && (!minutos || Number(minutos) <= 0)) {
+    redirect("/frequencia/nova?erro=minutos");
+  }
+
   await criarOcorrencia({
     colaborador_id: colaboradorId,
     tipo,
     data_inicio: dataInicio,
-    data_fim: dataFim,
-    minutos: null,
+    data_fim: pontual ? null : dataFim,
+    minutos: pontual ? Math.round(Number(minutos)) : null,
   });
 
   revalidarFrequencia(colaboradorId);
@@ -88,6 +95,8 @@ export async function registrarAfastamento(formData: FormData) {
     categoria,
     data_inicio: dataInicio,
     data_fim: dataFim,
+    cid: texto(formData, "cid"),
+    medico: texto(formData, "medico"),
   });
 
   if (periodoIncluiHoje(dataInicio, dataFim)) {

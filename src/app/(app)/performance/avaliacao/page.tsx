@@ -9,6 +9,7 @@ import {
   NOTAS_POTENCIAL,
   type NotaAvaliacao,
 } from "@/lib/data/tipos";
+import { hojeData } from "@/lib/datas";
 import { lancarAvaliacao } from "../actions";
 
 const MENSAGENS_ERRO: Record<string, string> = {
@@ -17,7 +18,7 @@ const MENSAGENS_ERRO: Record<string, string> = {
 
 /** Ciclo semestral atual e o anterior, no formato YYYY-SN. */
 function ciclosRecentes(): string[] {
-  const hoje = new Date();
+  const hoje = hojeData();
   const ano = hoje.getFullYear();
   const semestre = hoje.getMonth() < 6 ? 1 : 2;
   const atual = `${ano}-S${semestre}`;

@@ -96,6 +96,24 @@ export async function listarAfastamentos(filtro?: FiltroPeriodo): Promise<Afasta
   return data as Afastamento[];
 }
 
+export async function buscarAfastamento(id: string): Promise<Afastamento | null> {
+  if (!isSupabaseConfigured()) {
+    return afastamentosDemo.find((a) => a.id === id) ?? null;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("afastamentos")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Falha ao buscar afastamento: ${error.message}`);
+  }
+  return data as Afastamento | null;
+}
+
 export async function criarAfastamento(dados: NovoAfastamento): Promise<void> {
   if (!isSupabaseConfigured()) {
     afastamentosDemo.push({ ...dados, id: `a-${crypto.randomUUID()}` });

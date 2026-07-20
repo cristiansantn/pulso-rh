@@ -36,6 +36,9 @@ export interface Colaborador {
   data_admissao: string | null;
   tipo_contrato: string | null;
   jornada: string | null;
+  escala: Escala | null;
+  /** Dia da semana da folga fixa da escala (0 = domingo ... 6 = sabado). */
+  folga_fixa: DiaSemana | null;
   turno: Turno | null;
   status: StatusColaborador;
   data_desligamento: string | null;
@@ -67,6 +70,32 @@ export const TURNOS: Record<Turno, string> = {
   manha: "Manhã",
   tarde: "Tarde",
   noite: "Noite",
+};
+
+/**
+ * Escalas de trabalho da operacao. Na 5x2, padrao dos associados, a pessoa tem
+ * 1 folga fixa em um dia da semana (nao necessariamente sabado ou domingo),
+ * trabalha 9h48 por dia e cumpre 2 domingos trabalhados para 1 domingo de
+ * folga. A folga fixa registrada no cadastro e a base do planejamento
+ * automatico de escala dos proximos incrementos.
+ */
+export type Escala = "5x2" | "6x1";
+
+export const ESCALAS: Record<Escala, string> = {
+  "5x2": "5x2 — 9h48/dia, folga fixa na semana, 2 domingos trabalhados para 1 de folga",
+  "6x1": "6x1 — 7h20/dia, 1 folga na semana",
+};
+
+export type DiaSemana = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export const DIAS_SEMANA: Record<DiaSemana, string> = {
+  0: "Domingo",
+  1: "Segunda-feira",
+  2: "Terça-feira",
+  3: "Quarta-feira",
+  4: "Quinta-feira",
+  5: "Sexta-feira",
+  6: "Sábado",
 };
 
 export const ESCOLARIDADES = [
@@ -133,13 +162,16 @@ export const TIPOS_OCORRENCIA: Record<TipoOcorrencia, string> = {
 };
 
 /**
- * Tipos habilitados no registro manual. Por decisao de produto (2026-07-17),
- * apenas faltas por enquanto; folgas, atrasos e afins entram quando a escala
- * planejada existir. Os demais tipos seguem validos para leitura.
+ * Tipos habilitados no registro manual. Faltas, atrasos e saidas antecipadas
+ * podem ser registrados (decisao de produto de 2026-07-20); folga e ferias
+ * entram quando a escala planejada existir. Os demais tipos seguem validos
+ * para leitura.
  */
 export const TIPOS_OCORRENCIA_ATIVOS: Partial<Record<TipoOcorrencia, string>> = {
   falta_injustificada: "Falta injustificada",
   falta_justificada: "Falta justificada",
+  atraso: "Atraso",
+  saida_antecipada: "Saída antecipada",
 };
 
 /** Tipos de ocorrencia que contam como dia perdido no absenteismo. */
@@ -150,8 +182,9 @@ export const TIPOS_DIA_PERDIDO: TipoOcorrencia[] = [
 
 /**
  * Afastamentos e atestados: dados relacionados a saude, mantidos em tabela
- * separada (LGPD). Categoria e lista controlada, nunca texto livre — texto
- * livre vira porta de entrada para diagnosticos e outros dados sensiveis.
+ * separada (LGPD). Categoria e lista controlada. Os detalhes clinicos (CID e
+ * medico) sao opcionais e aparecem apenas na ficha do afastamento; quando
+ * houver papeis de acesso, esses campos passam a ser restritos.
  */
 export type TipoAfastamento = "atestado" | "afastamento";
 
@@ -172,6 +205,10 @@ export interface Afastamento {
   data_inicio: string;
   /** Data de retorno prevista; nula quando indeterminada. */
   data_fim: string | null;
+  /** CID do documento; opcional, visivel apenas na ficha do afastamento. */
+  cid: string | null;
+  /** Nome do medico que emitiu o documento; opcional. */
+  medico: string | null;
 }
 
 export type NovoAfastamento = Omit<Afastamento, "id">;

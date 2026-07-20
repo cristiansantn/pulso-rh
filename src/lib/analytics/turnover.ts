@@ -1,5 +1,5 @@
 import type { Colaborador } from "@/lib/data/tipos";
-import { formatarIsoLocal } from "@/lib/datas";
+import { formatarIsoLocal, hojeData } from "@/lib/datas";
 
 /**
  * Indicadores de turnover. O denominador disponivel e o quadro atual, entao a
@@ -112,7 +112,7 @@ const MESES_CURTOS = [
 
 /** Serie mensal de desligamentos dos ultimos `meses` meses, incluindo o atual. */
 export function seriePorMes(desligados: Colaborador[], meses: number): MesSerie[] {
-  const hoje = new Date();
+  const hoje = hojeData();
   const serie: MesSerie[] = [];
 
   for (let i = meses - 1; i >= 0; i -= 1) {

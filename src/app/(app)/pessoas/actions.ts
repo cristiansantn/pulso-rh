@@ -14,6 +14,8 @@ import {
   TIPOS_MOVIMENTACAO,
   type ColaboradorEditavel,
   type NovoColaborador,
+  type DiaSemana,
+  type Escala,
   type StatusColaborador,
   type TipoDesligamento,
   type TipoMovimentacao,
@@ -28,6 +30,7 @@ function texto(formData: FormData, campo: string): string | null {
 /** Extrai do formulario os campos comuns ao cadastro e a edicao. */
 function extrairCampos(formData: FormData): ColaboradorEditavel {
   const deslocamento = texto(formData, "tempo_deslocamento_min");
+  const folgaFixa = texto(formData, "folga_fixa");
 
   return {
     nome: texto(formData, "nome") ?? undefined,
@@ -49,6 +52,8 @@ function extrairCampos(formData: FormData): ColaboradorEditavel {
     data_admissao: texto(formData, "data_admissao"),
     tipo_contrato: texto(formData, "tipo_contrato"),
     jornada: texto(formData, "jornada"),
+    escala: texto(formData, "escala") as Escala | null,
+    folga_fixa: folgaFixa === null ? null : (Number(folgaFixa) as DiaSemana),
     turno: texto(formData, "turno") as Turno | null,
     status: (texto(formData, "status") ?? "ativo") as StatusColaborador,
   };

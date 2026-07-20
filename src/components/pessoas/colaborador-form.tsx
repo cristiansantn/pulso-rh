@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Fieldset, Input, Label, Select } from "@/components/ui/form";
 import {
+  DIAS_SEMANA,
+  ESCALAS,
   ESCOLARIDADES,
   GENEROS,
   STATUS_LABELS,
@@ -242,6 +244,42 @@ export function ColaboradorForm({
             placeholder="180h"
             defaultValue={colaborador?.jornada ?? undefined}
           />
+        </div>
+        <div>
+          <Label htmlFor="escala">Escala</Label>
+          <Select
+            id="escala"
+            name="escala"
+            defaultValue={colaborador ? (colaborador.escala ?? "") : "5x2"}
+          >
+            <option value="">Não definida</option>
+            {Object.entries(ESCALAS).map(([valor, rotulo]) => (
+              <option key={valor} value={valor}>
+                {rotulo}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="folga_fixa">Folga fixa</Label>
+          <Select
+            id="folga_fixa"
+            name="folga_fixa"
+            defaultValue={
+              colaborador?.folga_fixa != null ? String(colaborador.folga_fixa) : ""
+            }
+          >
+            <option value="">Não definida</option>
+            {Object.entries(DIAS_SEMANA).map(([valor, rotulo]) => (
+              <option key={valor} value={valor}>
+                {rotulo}
+              </option>
+            ))}
+          </Select>
+          <p className="mt-1 text-xs text-ink-muted">
+            Dia de folga semanal da escala 5x2 (não precisa cair no fim de
+            semana); base do planejamento automático de escala.
+          </p>
         </div>
         <div>
           <Label htmlFor="turno">Turno</Label>

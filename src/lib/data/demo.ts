@@ -1,4 +1,4 @@
-import { diasAtrasIso, formatarIsoLocal } from "@/lib/datas";
+import { diasAtrasIso, formatarIsoLocal, hojeData } from "@/lib/datas";
 import { FATORES_DISC, INDICADORES } from "./tipos";
 import type {
   Afastamento,
@@ -182,6 +182,9 @@ function pessoa(
     data_admissao: dataEntre(...faixas.admissao),
     tipo_contrato: "CLT",
     jornada: "220h",
+    // Escala padrao da operacao: 5x2 com folga fixa em um dia util da semana.
+    escala: "5x2",
+    folga_fixa: inteiro(1, 6) as Colaborador["folga_fixa"],
     turno: "manha",
     status: "ativo",
     data_desligamento: null,
@@ -233,7 +236,6 @@ const colaboradoresIniciais: Colaborador[] = [
   }),
   pessoa("p-mercia", "3010", "Mercia", "s-caixa", "c-caixa", "p-kimbelly", {
     genero: "Feminino",
-    status: "afastado",
   }),
   pessoa("p-matheus", "3020", "Matheus", "s-reserva", "c-oploja", "p-luana", {
     genero: "Masculino",
@@ -301,8 +303,9 @@ for (const colaborador of colaboradoresIniciais) {
 }
 
 /**
- * Faltas ficticias dos ultimos 90 dias (apenas faltas: o registro de folgas,
- * atrasos e afins esta desabilitado por enquanto). Datas relativas a hoje: a
+ * Faltas ficticias dos ultimos 90 dias. So faltas de proposito: atrasos e
+ * saidas antecipadas podem ser registrados na interface, mas a demo nao traz
+ * exemplos deles (decisao de 2026-07-20). Datas relativas a hoje: a
  * demo nunca fica "velha". As faltas do Caixa caem de proposito em domingos e
  * segundas — o aperto da escala de fim de semana, mesma causa das saidas do
  * setor; o corte "por dia da semana" do absenteismo conta essa historia.
@@ -330,13 +333,13 @@ function gerarOcorrencias(): Ocorrencia[] {
   // Offsets (em dias atras) que caem em domingo ou segunda-feira.
   const diasDeAperto: number[] = [];
   for (let d = 1; d <= 88; d += 1) {
-    const data = new Date();
+    const data = hojeData();
     data.setDate(data.getDate() - d);
     if (data.getDay() === 0 || data.getDay() === 1) diasDeAperto.push(d);
   }
 
   for (const colaborador of colaboradoresIniciais) {
-    // Afastada nao gera falta; ex-associados tem as faltas proprias abaixo.
+    // Afastados nao geram falta; ex-associados tem as faltas proprias abaixo.
     if (colaborador.status === "afastado" || colaborador.status === "desligado") {
       continue;
     }
@@ -375,15 +378,6 @@ function gerarOcorrencias(): Ocorrencia[] {
 const ocorrenciasIniciais: Ocorrencia[] = gerarOcorrencias();
 
 const afastamentosIniciais: Afastamento[] = [
-  // Em curso, coerente com o status "afastado" da Mercia.
-  {
-    id: "a-seed-1",
-    colaborador_id: "p-mercia",
-    tipo: "afastamento",
-    categoria: "inss",
-    data_inicio: diasAtrasIso(25),
-    data_fim: diasAtrasIso(-15),
-  },
   {
     id: "a-seed-2",
     colaborador_id: "p-layane",
@@ -391,6 +385,9 @@ const afastamentosIniciais: Afastamento[] = [
     categoria: "doenca",
     data_inicio: diasAtrasIso(62),
     data_fim: diasAtrasIso(60),
+    // Detalhes clinicos FICTICIOS, so para a ficha do afastamento ter exemplo.
+    cid: "J06.9",
+    medico: "Dra. Fernanda Prado (CRM 123456-SP)",
   },
 ];
 
@@ -822,10 +819,10 @@ interface EstadoDemo {
 // A chave versionada descarta estados de formatos antigos que sobrevivem no
 // globalThis durante o desenvolvimento.
 const escopoGlobal = globalThis as typeof globalThis & {
-  __estadoDemoV11?: EstadoDemo;
+  __estadoDemoV12?: EstadoDemo;
 };
 
-const estado: EstadoDemo = (escopoGlobal.__estadoDemoV11 ??= {
+const estado: EstadoDemo = (escopoGlobal.__estadoDemoV12 ??= {
   setores: setoresIniciais,
   cargos: cargosIniciais,
   colaboradores: colaboradoresIniciais,

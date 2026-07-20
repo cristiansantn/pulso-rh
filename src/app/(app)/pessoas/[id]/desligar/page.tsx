@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Input, Label, Select } from "@/components/ui/form";
 import { buscarColaborador } from "@/lib/data/colaboradores";
 import { MOTIVOS_DESLIGAMENTO, TIPOS_DESLIGAMENTO } from "@/lib/data/tipos";
+import { hojeIso } from "@/lib/datas";
 import { desligarColaborador } from "../../actions";
 
 export default async function DesligarColaboradorPage({
@@ -23,7 +24,7 @@ export default async function DesligarColaboradorPage({
     redirect(`/pessoas/${id}`);
   }
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeIso();
 
   return (
     <>

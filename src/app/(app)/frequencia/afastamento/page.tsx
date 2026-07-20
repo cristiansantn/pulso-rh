@@ -33,7 +33,7 @@ export default async function NovoAfastamentoPage({
 
       <PageHeader
         titulo="Registrar afastamento ou atestado"
-        descricao="A categoria é uma lista controlada. Não registre diagnóstico, CID ou qualquer detalhe de saúde — LGPD."
+        descricao="A categoria é uma lista controlada. CID e médico são opcionais e aparecem apenas na ficha do registro; quando houver papéis de acesso, esses dados passam a ser restritos (LGPD)."
       />
 
       {erro && MENSAGENS_ERRO[erro] && (
@@ -99,6 +99,24 @@ export default async function NovoAfastamentoPage({
             <p className="mt-1 text-xs text-ink-muted">
               Deixe em branco quando indeterminado.
             </p>
+          </div>
+        </Fieldset>
+
+        <Fieldset
+          legenda="Detalhes do documento"
+          descricao="Opcionais. Ficam visíveis apenas na ficha do registro."
+        >
+          <div>
+            <Label htmlFor="cid">CID</Label>
+            <Input id="cid" name="cid" placeholder="J06.9" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="medico">Médico</Label>
+            <Input
+              id="medico"
+              name="medico"
+              placeholder="Nome e CRM de quem emitiu o documento"
+            />
           </div>
         </Fieldset>
 

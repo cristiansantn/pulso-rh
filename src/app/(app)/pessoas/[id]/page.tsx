@@ -37,8 +37,11 @@ import {
   TIPOS_DESLIGAMENTO,
   TIPOS_OCORRENCIA,
   TURNOS,
+  DIAS_SEMANA,
+  ESCALAS,
   type TipoIndicador,
 } from "@/lib/data/tipos";
+import { hojeData } from "@/lib/datas";
 
 function formatarData(iso: string | null): string {
   if (!iso) return "—";
@@ -47,7 +50,7 @@ function formatarData(iso: string | null): string {
 
 function calcularIdade(nascimento: string | null): string {
   if (!nascimento) return "—";
-  const hoje = new Date();
+  const hoje = hojeData();
   const data = new Date(`${nascimento}T00:00:00`);
   let idade = hoje.getFullYear() - data.getFullYear();
   const aniversarioPendente =
@@ -235,6 +238,18 @@ export default async function FichaColaboradorPage({
           <Campo rotulo="Data de admissão" valor={formatarData(colaborador.data_admissao)} />
           <Campo rotulo="Tipo de contrato" valor={colaborador.tipo_contrato} />
           <Campo rotulo="Jornada" valor={colaborador.jornada} />
+          <Campo
+            rotulo="Escala"
+            valor={colaborador.escala ? ESCALAS[colaborador.escala] : null}
+          />
+          <Campo
+            rotulo="Folga fixa"
+            valor={
+              colaborador.folga_fixa != null
+                ? DIAS_SEMANA[colaborador.folga_fixa]
+                : null
+            }
+          />
           <Campo
             rotulo="Turno"
             valor={colaborador.turno ? TURNOS[colaborador.turno] : null}

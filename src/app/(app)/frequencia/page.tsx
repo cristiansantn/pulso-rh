@@ -81,6 +81,30 @@ export default async function FrequenciaPage({
     (a) => a.data_inicio <= hoje && (a.data_fim === null || a.data_fim >= hoje),
   );
 
+  // Atestados sao ocorrencias do dia a dia e ficam na lista de cima; a secao
+  // de baixo guarda so os casos especiais (INSS, licencas e afins).
+  const atestados = afastamentos.filter((a) => a.tipo === "atestado");
+  const afastamentosEspeciais = afastamentos.filter((a) => a.tipo === "afastamento");
+
+  const linhasFrequencia = [
+    ...faltas.map((o) => ({
+      id: o.id,
+      colaborador_id: o.colaborador_id,
+      rotulo: TIPOS_OCORRENCIA[o.tipo],
+      inicio: o.data_inicio,
+      fim: o.data_fim,
+      ficha: null as string | null,
+    })),
+    ...atestados.map((a) => ({
+      id: a.id,
+      colaborador_id: a.colaborador_id,
+      rotulo: TIPOS_AFASTAMENTO[a.tipo],
+      inicio: a.data_inicio,
+      fim: a.data_fim,
+      ficha: `/frequencia/afastamento/${a.id}`,
+    })),
+  ].sort((a, b) => b.inicio.localeCompare(a.inicio));
+
   const filtroAtivo = Boolean(params.periodo || params.setor);
 
   return (
@@ -101,7 +125,7 @@ export default async function FrequenciaPage({
           className="flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-panel transition-opacity hover:opacity-90"
         >
           <Plus size={15} />
-          Registrar falta
+          Registrar ocorrência
         </Link>
       </PageHeader>
 
@@ -162,10 +186,11 @@ export default async function FrequenciaPage({
       <section className="mt-6 overflow-hidden rounded-lg border border-line bg-panel">
         <div className="border-b border-line px-6 py-4">
           <h2 className="text-sm font-semibold">
-            Faltas — {PERIODOS[String(periodoDias)].toLowerCase()}
+            Faltas e atestados — {PERIODOS[String(periodoDias)].toLowerCase()}
           </h2>
           <p className="mt-0.5 text-xs text-ink-muted">
-            O histórico completo de cada pessoa fica na ficha individual.
+            O dia a dia da frequência. O histórico completo de cada pessoa fica
+            na ficha individual; atestados abrem a ficha do registro.
           </p>
         </div>
         <table className="w-full text-sm">
@@ -174,29 +199,40 @@ export default async function FrequenciaPage({
               <th className="px-6 py-2.5 font-medium">Associado</th>
               <th className="px-6 py-2.5 font-medium">Tipo</th>
               <th className="px-6 py-2.5 font-medium">Período</th>
+              <th className="px-6 py-2.5 font-medium" />
             </tr>
           </thead>
           <tbody>
-            {faltas.length === 0 && (
+            {linhasFrequencia.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-6 py-10 text-center text-ink-muted">
-                  Nenhuma falta registrada no período.
+                <td colSpan={4} className="px-6 py-10 text-center text-ink-muted">
+                  Nenhuma falta ou atestado registrado no período.
                 </td>
               </tr>
             )}
-            {faltas.map((o) => (
+            {linhasFrequencia.map((linha) => (
               <tr
-                key={o.id}
+                key={linha.id}
                 className="border-b border-line transition-colors last:border-0 hover:bg-surface"
               >
                 <td className="px-6 py-3">
-                  <Link href={`/pessoas/${o.colaborador_id}`} className="font-medium">
-                    {nomePorId.get(o.colaborador_id) ?? "—"}
+                  <Link href={`/pessoas/${linha.colaborador_id}`} className="font-medium">
+                    {nomePorId.get(linha.colaborador_id) ?? "—"}
                   </Link>
                 </td>
-                <td className="px-6 py-3 text-ink-soft">{TIPOS_OCORRENCIA[o.tipo]}</td>
+                <td className="px-6 py-3 text-ink-soft">{linha.rotulo}</td>
                 <td className="px-6 py-3 text-ink-soft">
-                  {formatarPeriodo(o.data_inicio, o.data_fim)}
+                  {formatarPeriodo(linha.inicio, linha.fim)}
+                </td>
+                <td className="px-6 py-3 text-right">
+                  {linha.ficha && (
+                    <Link
+                      href={linha.ficha}
+                      className="text-xs font-medium text-ink-soft underline-offset-2 hover:underline"
+                    >
+                      Abrir ficha
+                    </Link>
+                  )}
                 </td>
               </tr>
             ))}
@@ -207,11 +243,12 @@ export default async function FrequenciaPage({
       <section className="mt-6 overflow-hidden rounded-lg border border-line bg-panel">
         <div className="border-b border-line px-6 py-4">
           <h2 className="text-sm font-semibold">
-            Afastamentos e atestados — {PERIODOS[String(periodoDias)].toLowerCase()}
+            Afastamentos — {PERIODOS[String(periodoDias)].toLowerCase()}
           </h2>
           <p className="mt-0.5 text-xs text-ink-muted">
-            Categorias controladas, sem texto livre. Quando houver papéis de acesso,
-            esta seção passa a ser restrita (LGPD).
+            Somente casos especiais: INSS, licenças e afins. Os detalhes ficam na
+            ficha do afastamento; quando houver papéis de acesso, esta seção passa
+            a ser restrita (LGPD).
           </p>
         </div>
         <table className="w-full text-sm">
@@ -222,17 +259,18 @@ export default async function FrequenciaPage({
               <th className="px-6 py-2.5 font-medium">Categoria</th>
               <th className="px-6 py-2.5 font-medium">Início</th>
               <th className="px-6 py-2.5 font-medium">Retorno previsto</th>
+              <th className="px-6 py-2.5 font-medium" />
             </tr>
           </thead>
           <tbody>
-            {afastamentos.length === 0 && (
+            {afastamentosEspeciais.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-ink-muted">
+                <td colSpan={6} className="px-6 py-10 text-center text-ink-muted">
                   Nenhum afastamento registrado no período.
                 </td>
               </tr>
             )}
-            {afastamentos.map((a) => {
+            {afastamentosEspeciais.map((a) => {
               const emCurso =
                 a.data_inicio <= hoje && (a.data_fim === null || a.data_fim >= hoje);
               return (
@@ -257,6 +295,14 @@ export default async function FrequenciaPage({
                         Em curso
                       </span>
                     )}
+                  </td>
+                  <td className="px-6 py-3 text-right">
+                    <Link
+                      href={`/frequencia/afastamento/${a.id}`}
+                      className="text-xs font-medium text-ink-soft underline-offset-2 hover:underline"
+                    >
+                      Abrir ficha
+                    </Link>
                   </td>
                 </tr>
               );
