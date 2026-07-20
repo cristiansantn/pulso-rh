@@ -14,8 +14,53 @@ import type {
  * que as paginas nao sabem se a fonte e o Supabase ou o modo demonstracao.
  */
 
-const SELECT_COLABORADOR =
-  "*, setor:setores(nome), cargo:cargos(nome), gestor:colaboradores!colaboradores_gestor_id_fkey(nome)";
+// O gestor NAO e embutido aqui de proposito. gestor_id e um auto-relacionamento
+// (colaboradores -> colaboradores) e o PostgREST nem sempre resolve o embedding
+// de uma FK auto-referencial, retornando "Could not find a relationship". O nome
+// do gestor e resolvido em uma consulta separada por anexarGestores().
+const SELECT_COLABORADOR = "*, setor:setores(nome), cargo:cargos(nome)";
+
+type LinhaComGestorId = { gestor_id: string | null };
+
+/**
+ * Resolve o nome do gestor de cada linha com uma consulta a parte, evitando o
+ * embedding do auto-relacionamento. Mantem o formato { gestor: { nome } | null }
+ * esperado pelo tipo Colaborador.
+ */
+async function anexarGestores<T extends LinhaComGestorId>(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  linhas: T[],
+): Promise<(T & { gestor: { nome: string } | null })[]> {
+  const ids = [
+    ...new Set(
+      linhas
+        .map((l) => l.gestor_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  const nomePorId = new Map<string, string>();
+  if (ids.length > 0) {
+    const { data, error } = await supabase
+      .from("colaboradores")
+      .select("id, nome")
+      .in("id", ids);
+    if (error) {
+      throw new Error(`Falha ao resolver gestores: ${error.message}`);
+    }
+    for (const g of (data as { id: string; nome: string }[] | null) ?? []) {
+      nomePorId.set(g.id, g.nome);
+    }
+  }
+
+  return linhas.map((l) => ({
+    ...l,
+    gestor:
+      l.gestor_id && nomePorId.has(l.gestor_id)
+        ? { nome: nomePorId.get(l.gestor_id)! }
+        : null,
+  }));
+}
 
 /** Resolve as referencias de setor, cargo e gestor no modo demonstracao. */
 function relacoesDemo(dados: ColaboradorEditavel) {
@@ -83,7 +128,11 @@ export async function listarColaboradores(
   if (error) {
     throw new Error(`Falha ao listar colaboradores: ${error.message}`);
   }
-  return data as Colaborador[];
+  const comGestor = await anexarGestores(
+    supabase,
+    (data ?? []) as (Colaborador & LinhaComGestorId)[],
+  );
+  return comGestor as Colaborador[];
 }
 
 export async function buscarColaborador(id: string): Promise<Colaborador | null> {
@@ -101,7 +150,13 @@ export async function buscarColaborador(id: string): Promise<Colaborador | null>
   if (error) {
     throw new Error(`Falha ao buscar colaborador: ${error.message}`);
   }
-  return data as Colaborador | null;
+  if (!data) {
+    return null;
+  }
+  const [comGestor] = await anexarGestores(supabase, [
+    data as Colaborador & LinhaComGestorId,
+  ]);
+  return comGestor as Colaborador;
 }
 
 /** Cadastra e devolve o id criado (a admissao de vaga precisa do vinculo). */
@@ -158,4 +213,3 @@ export async function atualizarColaborador(
     throw new Error(`Falha ao atualizar colaborador: ${error.message}`);
   }
 }
-
