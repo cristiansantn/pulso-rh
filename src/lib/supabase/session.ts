@@ -45,9 +45,17 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Uma falha ao consultar o Supabase (rede, credencial invalida, cookie
+  // corrompido) nao pode derrubar toda a aplicacao: sem isto, qualquer excecao
+  // aqui faz o proxy estourar e todas as rotas — inclusive /login — retornam
+  // 500. Tratamos como "sem usuario" e deixamos o fluxo normal de redirecionar.
+  let user = null;
+  try {
+    const resultado = await supabase.auth.getUser();
+    user = resultado.data.user;
+  } catch {
+    user = null;
+  }
 
   if (!user && !isLoginPage) {
     return NextResponse.redirect(new URL("/login", request.url));
