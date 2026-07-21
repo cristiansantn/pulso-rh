@@ -400,27 +400,22 @@ não. Funções: `hojeIso()` (YYYY-MM-DD), `hojeData()`, `diasAtrasIso(n)`,
 
 ## 9. Limitações conhecidas e pontos de atenção
 
-1. **Cargos-chave amarrados a ids de demonstração.** Em `alertas.ts` e
-   `insights.ts`, `CARGOS_CHAVE_IDS = ["c-gerente", "c-coordenador",
-   "c-supervisor", "c-lider"]` são **slugs do modo demo**. No Supabase os ids
-   são UUIDs, então essa comparação **nunca casa em produção** — os alertas e
-   insights de **sucessão não disparam** com dados reais. Correção sugerida:
-   amarrar por **nome de cargo** (como o catálogo de indicadores já faz), não
-   por id. *(Ver seção 2 sobre a diferença de ids entre os modos.)*
-
-2. **Absenteísmo usa dias corridos**, não a escala realmente cumprida. É uma
+1. **Absenteísmo usa dias corridos**, não a escala realmente cumprida. É uma
    aproximação assumida até o módulo de escala planejada×realizada existir.
 
-3. **Índice de saída ≠ turnover anualizado.** Falta histórico mensal de quadro
+2. **Índice de saída ≠ turnover anualizado.** Falta histórico mensal de quadro
    para o cálculo clássico por headcount médio.
 
-4. **RLS uniforme.** Todas as tabelas liberam acesso total ao usuário
+3. **RLS uniforme.** Todas as tabelas liberam acesso total ao usuário
    autenticado; papéis granulares (ex.: gestor vê só a própria equipe) e
    restrição dos campos sensíveis (CID, médico) são fase posterior. A separação
    de afastamentos em tabela própria já prepara essa restrição sem migração.
 
-5. **Vínculo indicador→setor por nome.** Se um setor do catálogo `INDICADORES`
-   for renomeado no banco, o indicador some dos filtros até o catálogo ser
+4. **Vínculos por nome de setor e de cargo.** O catálogo `INDICADORES`
+   aponta o setor dono por nome, e `CARGOS_CHAVE_NOMES` (em `tipos.ts`) define
+   os cargos críticos de sucessão também por nome — os ids diferem entre demo
+   (slugs) e Supabase (uuids), o nome é estável nos dois. Se um setor ou cargo
+   desses for renomeado no banco, some dos filtros/alertas até o catálogo ser
    atualizado.
 
 ---

@@ -329,6 +329,14 @@ export type TipoIndicador =
   | "pcj_realizados"
   | "seguros_vendidos";
 
+/**
+ * Cargos criticos para a continuidade da operacao. O vinculo e por nome pela
+ * mesma razao do catalogo de indicadores: os ids diferem entre o modo demo
+ * (slugs) e o Supabase (uuids), o nome e estavel nos dois. Cargo renomeado no
+ * banco sai da lista ate o catalogo ser atualizado.
+ */
+export const CARGOS_CHAVE_NOMES = ["Gerente", "Coordenador", "Supervisor", "Líder"];
+
 export interface DefinicaoIndicador {
   rotulo: string;
   /**

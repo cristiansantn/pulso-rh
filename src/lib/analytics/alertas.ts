@@ -18,7 +18,7 @@ import type {
   Setor,
   Vaga,
 } from "@/lib/data/tipos";
-import { TURNOS } from "@/lib/data/tipos";
+import { CARGOS_CHAVE_NOMES, TURNOS } from "@/lib/data/tipos";
 
 /**
  * Motor de alertas. Cada regra compara um recorte com uma referencia (a media
@@ -66,9 +66,6 @@ export const CATEGORIA_LABEL: Record<CategoriaAlerta, string> = {
   cobertura: "Cobertura de quadro",
   sucessao: "Sucessão",
 };
-
-/** Cargos criticos para a continuidade da operacao. */
-const CARGOS_CHAVE_IDS = ["c-gerente", "c-coordenador", "c-supervisor", "c-lider"];
 
 function umDecimal(valor: number): string {
   return valor.toFixed(1).replace(".", ",");
@@ -207,7 +204,7 @@ function alertasSucessao(dados: DadosAlertas): Alerta[] {
   // Cargos-chave que existem hoje no quadro.
   const cargosChaveOcupados = new Map<string, string>();
   for (const pessoa of quadro) {
-    if (pessoa.cargo_id && CARGOS_CHAVE_IDS.includes(pessoa.cargo_id) && pessoa.cargo?.nome) {
+    if (pessoa.cargo?.nome && CARGOS_CHAVE_NOMES.includes(pessoa.cargo.nome)) {
       cargosChaveOcupados.set(pessoa.cargo.nome, pessoa.cargo.nome);
     }
   }

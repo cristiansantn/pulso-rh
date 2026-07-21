@@ -11,14 +11,12 @@ import {
 import { listarColaboradores } from "@/lib/data/colaboradores";
 import { listarPlanosSucessao } from "@/lib/data/talentos";
 import {
+  CARGOS_CHAVE_NOMES,
   COMPETENCIAS,
   PRONTIDAO,
   type Colaborador,
   type Prontidao,
 } from "@/lib/data/tipos";
-
-/** Cargos considerados criticos para a continuidade da operacao. */
-const CARGOS_CHAVE_IDS = ["c-gerente", "c-coordenador", "c-supervisor", "c-lider"];
 
 /** Cor de cada faixa no donut; pronto agora ganha o tom positivo. */
 const CORES_PRONTIDAO: Record<Prontidao, { cor: string; opacidade?: number }> = {
@@ -75,9 +73,8 @@ export default async function TalentosPage() {
   // Cobertura dos cargos-chave: quantos postos ocupados tem sucessor mapeado.
   const cargosChaveOcupados = new Set(
     ativos
-      .filter((c) => c.cargo_id && CARGOS_CHAVE_IDS.includes(c.cargo_id))
       .map((c) => c.cargo?.nome)
-      .filter((nome): nome is string => Boolean(nome)),
+      .filter((nome): nome is string => nome != null && CARGOS_CHAVE_NOMES.includes(nome)),
   );
   const cargosComBanco = new Set(banco.map((b) => b.cargoNome));
   const cargosChaveSemBanco = [...cargosChaveOcupados].filter(

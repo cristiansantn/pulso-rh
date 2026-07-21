@@ -12,6 +12,7 @@ import {
 } from "@/lib/analytics/turnover";
 import { diasAtrasIso, hojeIso } from "@/lib/datas";
 import {
+  CARGOS_CHAVE_NOMES,
   MOTIVOS_DESLIGAMENTO,
   TURNOS,
   type Afastamento,
@@ -54,8 +55,6 @@ export const CATEGORIA_INSIGHT_LABEL: Record<CategoriaInsight, string> = {
   cobertura: "Cobertura",
   sucessao: "Sucessão",
 };
-
-const CARGOS_CHAVE_IDS = ["c-gerente", "c-coordenador", "c-supervisor", "c-lider"];
 
 function umDecimal(valor: number): string {
   return valor.toFixed(1).replace(".", ",");
@@ -222,9 +221,8 @@ function insightsSucessao(dados: DadosInsights): Insight[] {
 
   const cargosChave = new Set(
     quadro
-      .filter((c) => c.cargo_id && CARGOS_CHAVE_IDS.includes(c.cargo_id))
       .map((c) => c.cargo?.nome)
-      .filter((nome): nome is string => Boolean(nome)),
+      .filter((nome): nome is string => nome != null && CARGOS_CHAVE_NOMES.includes(nome)),
   );
 
   const planosAtivos = [
